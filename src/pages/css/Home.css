@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
+
+*{
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+body{
+    font-family: 'Cairo', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    background: radial-gradient(circle, #ccd4da 40%, #ffffff 100%);
+}
+
+.root{
+    display: flex;
+    flex-direction: column;
+}
+
+.top{
+    display: flex;
+    height: fit-content;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.logo{
+    width: 220px;
+    height: auto;
+}
+
+main{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+}
+
+main .banner{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 300px;
+
+    background-image: url(../imgs/banner.jpg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.banner::before{
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 300px;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.banner h2{
+    color: #161616;
+    font-size: 2.8em;
+    font-weight: 800;
+    margin: 150px 0 0 0;
+}
+
+.page-title{
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.jobs{
+    margin: 0 40px 0 40px;
+    direction: rtl;
+}
+
+.jobs-intro-text{
+    margin-top: 20px;
+    font-size: 1.2em;
+}
+
+.jobs-list{
+    display: flex;
+    flex-flow: row wrap;
+    height: fit-content;
+    list-style: none;
+    justify-content: center;
+    gap: 70px;
+    margin-top: 80px;
+}
+
+.job-item{
+    position: relative;
+    width: 100%;
+    max-width: 476px;
+    height: 250px;
+    border-radius: 15px;
+    background-color: #ffffff;
+    direction: rtl;
+    text-align: right;
+    padding: 65px 20px 20px 20px;
+    transition: 0.3s;
+    text-overflow: clip;
+    box-shadow: 0px 4px 32px rgb(0 0 0 / 10%);
+    user-select: none;
+}
+
+.job-item a{
+    color: inherit;
+    text-decoration: none;
+}
+
+.job-item .job-title{
+    font-size: 1.1em;
+}
+
+.job-item .job-desc{
+    font-size: 0.95em;
+    text-overflow: ellipsis;
+    height: 130px;
+    overflow: hidden scroll;
+}
+
+.job-item:hover{
+    background-color: #0f476d;
+    color: #e5e5e5;
+    cursor: pointer;
+}
+
+.job-item:hover .icon-container{
+    background-color: #8d8d8d;
+    cursor: pointer;
+}
+
+
+.icon-container{
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: -40px;
+    right: 40px;
+    width: 90px;
+    height: 90px;
+    background-color: #ffffff;
+    -webkit-box-align: center;
+    -webkit-box-pack: center;
+    border-radius: 6px 6px 32px 6px;
+    box-shadow: 0px 4px 32px rgb(0 0 0 / 10%);
+    transition: 0.3s;
+}
+
+.job-item .icon-container .icon{
+    width: 60px;
+    height: 60px;
+    /* background-color: #0f476d; */
+
+    color: #0f476d;
+}
+
+.job-item .icon-container img{
+    color: #0f476d;
+}
+
+.job-title{
+
+}
+
+@media (width >= 600px){
+    .jobs-list{
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: max-content;
+        grid-template-areas: "col-1 col-2";
+        column-gap: 35px;
+        row-gap: 70px;
+    }
+
+    .job-item{
+        width: 250px;
+    }
+}
+
+@media (width >= 800px) and (width < 1000px){
+    .job-item{
+        width: 350px;
+    }
+}
+
+@media (width >= 1000px) and (width < 1550px){
+    .job-item{
+        width: 440px;
+    }
+}
+
+@media (width >= 1100px){
+    .jobs-list{
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .job-item{
+        width: 320px;
+    }
+}
+
+@media (width >= 1250px){
+    .job-item{
+        width: 380px;
+    }
+}
+
+@media (width >= 1550px){
+    .job-item{
+        width: 440px;
+    }
+}
