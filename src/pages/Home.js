@@ -1,9 +1,7 @@
 import React from 'react';
 import './css/Home.css';
-import logo from './imgs/logo.png';
 import cashierIcon from './imgs/cashier.svg';
 import deliveryIcon from './imgs/delivery.svg';
-import { Link } from 'react-router-dom';
 
 const jobs = [
     {
@@ -41,7 +39,7 @@ function getJobs() {
     jobs.map((job) => {
         html_jobs.push(
             <li className="job-item">
-                <Link to={<Home />}>
+                <a href="/job">
                     <div className="icon-container">
                         <img className="icon" src={job.icon} alt="أيقونة الوظيفة" />
                     </div>
@@ -62,7 +60,7 @@ function getJobs() {
                             }
                         )()}
                     </p>
-                </Link>
+                </a>
             </li>
         )
         return null;
@@ -73,13 +71,9 @@ function getJobs() {
 export function Home() {
     return (
         <>
-            <header className="top">
-                <img className="logo" src={logo} alt="Shubra logo" />
-            </header>
-
             <main>
                 <h1 className="page-title">
-                    الوظائف الشاغرة في شبرا الطائف
+                    بوابة التوظيف - شركة شبرا الطائف التجارية
                 </h1>
                 <section className="banner">
                     <h2>

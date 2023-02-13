@@ -12,6 +12,7 @@ body{
     font-size: 17px;
     font-weight: 500;
     background: radial-gradient(circle, #ccd4da 40%, #ffffff 100%);
+    direction: rtl;
 }
 
 .root{
@@ -104,16 +105,75 @@ main .banner{
     background-color: #ffffff;
     direction: rtl;
     text-align: right;
-    padding: 65px 20px 20px 20px;
+    /* padding: 65px 20px 20px 14px; */
     transition: 0.3s;
     text-overflow: clip;
     box-shadow: 0px 4px 32px rgb(0 0 0 / 10%);
-    user-select: none;
+    /* user-select: none; */
 }
 
 .job-item a{
-    color: inherit;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 65px 20px 20px 14px;
+    /* user-select: none; */
+    color: black;
     text-decoration: none;
+    /* pointer-events: none; */
+}
+
+.job-item a:active{
+    background-color: #0f476d;
+    color: #e5e5e5;
+}
+
+@media (hover: hover){
+    .job-item a:hover{
+        background-color: #0f476d;
+        color: #e5e5e5;
+    }
+    .job-item a:hover .icon-container{
+        background-color: #8d8d8d;
+    }
+    .job-item a:focus-visible:hover .icon-container{
+        transition: none;
+        outline: -webkit-focus-ring-color auto 1px;
+    }
+
+    .job-item a:focus-visible:hover{
+        outline: -webkit-focus-ring-color auto 1px;
+    }
+}
+
+.job-item a::selection{
+    color: yellow;
+    background-color: yellow;
+}
+
+
+.job-item a:active .icon-container{
+    background-color: #8d8d8d;
+}
+
+.job-item a:focus-visible .icon-container{
+    transition: none;
+    outline: #0f476d auto 1px;
+}
+
+.job-item a:focus-visible{
+    outline: #0f476d auto 1px;
+}
+
+.job-item a:focus-visible:active .icon-container{
+    transition: none;
+    outline: -webkit-focus-ring-color auto 1px;
+}
+
+.job-item a:focus-visible:active{
+    outline: -webkit-focus-ring-color auto 1px;
 }
 
 .job-item .job-title{
@@ -125,19 +185,36 @@ main .banner{
     text-overflow: ellipsis;
     height: 130px;
     overflow: hidden scroll;
+    padding-left: 10px;
 }
 
-.job-item:hover{
-    background-color: #0f476d;
-    color: #e5e5e5;
-    cursor: pointer;
+.job-desc::-webkit-scrollbar{
+    display: none;
 }
 
-.job-item:hover .icon-container{
+.job-item:hover .job-desc::-webkit-scrollbar{
+    display: initial;
+    width: 5px;
+}
+
+
+
+.job-desc::-webkit-scrollbar-track{
+    margin-bottom: 20px;
+    background-color: transparent;
+}
+
+.job-desc::-webkit-scrollbar-thumb{
+    border-radius: 3px;
+}
+
+.job-item:hover .job-desc::-webkit-scrollbar-thumb{
     background-color: #8d8d8d;
-    cursor: pointer;
 }
 
+.job-item:hover .job-desc::-webkit-scrollbar-thumb:hover{
+    background-color: #aaaaaa;
+}
 
 .icon-container{
     position: absolute;
@@ -151,6 +228,7 @@ main .banner{
     background-color: #ffffff;
     -webkit-box-align: center;
     -webkit-box-pack: center;
+    border: none;
     border-radius: 6px 6px 32px 6px;
     box-shadow: 0px 4px 32px rgb(0 0 0 / 10%);
     transition: 0.3s;
@@ -168,9 +246,6 @@ main .banner{
     color: #0f476d;
 }
 
-.job-title{
-
-}
 
 @media (width >= 600px){
     .jobs-list{
@@ -182,19 +257,19 @@ main .banner{
         row-gap: 70px;
     }
 
-    .job-item{
+    .job-item a{
         width: 250px;
     }
 }
 
 @media (width >= 800px) and (width < 1000px){
-    .job-item{
+    .job-item a{
         width: 350px;
     }
 }
 
 @media (width >= 1000px) and (width < 1550px){
-    .job-item{
+    .job-item a{
         width: 440px;
     }
 }
@@ -204,19 +279,19 @@ main .banner{
         grid-template-columns: repeat(3, 1fr);
     }
 
-    .job-item{
+    .job-item a{
         width: 320px;
     }
 }
 
 @media (width >= 1250px){
-    .job-item{
+    .job-item a{
         width: 380px;
     }
 }
 
 @media (width >= 1550px){
-    .job-item{
+    .job-item a{
         width: 440px;
     }
 }
