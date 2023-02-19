@@ -308,9 +308,6 @@ ol li{
     transition: 0.7ms;
 }
 
-.form-block:not(:last-child):has(.tooltip-container .tooltip-below){
-    margin-bottom: 50px;
-}
 
 .form-block:last-child:has(.tooltip-container .tooltip-below),
 .form-block:not(:last-child){
@@ -319,6 +316,10 @@ ol li{
 
 .form-block.tight:not(:last-child){
     margin-bottom: 10px;
+}
+
+.form-block:not(:last-child):has(.tooltip-container .tooltip-below){
+    margin-bottom: 70px;
 }
 
 .form-block:has(.course-item, .experience-item){
@@ -615,7 +616,7 @@ ol li{
 }
 
 .s-tooltip {
-    background: #d70022;
+    background: #ca6060;
     border-radius: 5px;
     color: #fff;
     padding: 5px 12px;
@@ -631,17 +632,17 @@ ol li{
 
 .s-tooltip.tooltip-below{
     right: 3px;
-    animation: 0.4s tooltip-fade-below 0.8s both;
+    animation: 0.4s tooltip-fade-below both;
 }
 
 .s-tooltip.tooltip-right{
     top: -5px;
-    animation: 0.4s tooltip-fade-right 0.8s both;
+    animation: 0.4s tooltip-fade-right both;
 }
 
 
 .s-tooltip::before {
-    background: #d70022;
+    background: #ca6060;
     bottom: -8px;
     content: ".";
     width: 16px;

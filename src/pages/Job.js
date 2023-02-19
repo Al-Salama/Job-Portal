@@ -3,6 +3,8 @@ import './css/Job.css';
 import deliveryIcon from './imgs/delivery.svg';
 import cities from '../data/cities'
 import countries from '../data/countries'
+import useArray from '../hooks/useArray';
+import validateForm from '../utils/validator';
 
 function wait(ms) {
     return new Promise(
@@ -21,26 +23,33 @@ function toggleAllInputs(toggle) {
     }
 }
 
-async function onFormSubmit(e, courses, experience) {
+async function onFormSubmit(e, courses, experience, setFormErrors) {
     e.preventDefault();
     e.stopPropagation();
+
+    const formErrors = validateForm();
+    if (formErrors.length > 0) {
+        let inputParent = document.getElementById(formErrors[0].id).parentElement;
+        if (inputParent.classList.contains("tooltip-container")) {
+            inputParent = inputParent.parentElement;
+        }
+        inputParent.scrollIntoView({behavior: 'smooth', block: 'center'})
+
+        await wait(600);
+        setFormErrors(formErrors);
+        return;
+    };
 
     const form = document.getElementById("form");
     const formData = new FormData(form);
 
-    const selectedDegree = formData.get("degree");
-    if (selectedDegree === "default" || selectedDegree === null) {
-        return;
-    }
+    const selectedDegree = (document.getElementById("degree").selectedIndex) - 1;
     formData.set("degree", degrees[selectedDegree]);
 
-    const selectedMaritalStatus = formData.get("maritalStatus");
-    if (selectedMaritalStatus === "default" || selectedMaritalStatus === null) {
-        return;
-    }
+    const selectedMaritalStatus = (form.querySelector("select#marital-status").selectedIndex) - 1;
     {
         let currentMaritalStatus;
-        if (selectedMaritalStatus === "2") {
+        if (selectedMaritalStatus === 2) {
             currentMaritalStatus = formData.get("maritalStatusOther");
             formData.delete("maritalStatusOther");
         } else {
@@ -99,6 +108,8 @@ function onDegreeSelect(setDegree) {
 }
 
 function onMaritalStatusSelect(setMaritalStatus) {
+    console.log(this.selectedIndex)
+    console.log(this.selectedOptions)
     if (this.value === "default") {
         setMaritalStatus(this.value);
     } else {
@@ -159,31 +170,40 @@ function getMaritalStatus() {
     return maritalStatusOptions;
 }
 
-function getMaritalComponent(selectedMarital) {
+function getMaritalComponent(selectedMarital, formErrorsArray) {
     if (typeof selectedMarital !== "number" || selectedMarital < 2) return;
 
     return (
         <>
             <label htmlFor="marital-status-other">الحالة الإجتماعية</label>
+            <div className='tooltip-container'>
             <input required type="text" name="maritalStatusOther" id="marital-status-other" placeholder="يرجى كتابة حالتك الإجتماعية" />
+                {getErrorForm("marital-status-other", formErrorsArray, "tooltip-below")}
+            </div>
         </>
     );
 }
 
-function getDegreeComponent(selectedDegree) {
+function getDegreeComponent(selectedDegree, formErrorsArray) {
     let degreeComponent;
     if (typeof selectedDegree === "number") {
         if (selectedDegree === 0) {
             degreeComponent =
                 <div className="form-block">
                     <label htmlFor="gpa">المعدل التراكمي</label>
-                    <input required type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
+                    <div className='tooltip-container'>
+                        <input required type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
+                        {getErrorForm("gpa", formErrorsArray, "tooltip-below")}
+                    </div>
                 </div>
                 ;
         } else {
             degreeComponent =
                 <div className="form-block">
-                    <label htmlFor="field">التخصص</label>
+                    <div className='tooltip-container'>
+                        <label htmlFor="field">التخصص</label>
+                        {getErrorForm("field", formErrorsArray)}
+                    </div>
                     <input required type="text" name="field" id="field" placeholder="التخصص الجامعي" />
                 </div>
                 ;
@@ -219,7 +239,19 @@ async function deleteItem(event, courses, setCourses) {
     return true
 }
 
-function saveCourseItem(event, courses, setCourses) {
+async function saveCourseItem(event, courses, setCourses, setFormErrors) {
+    const formErrors = validateForm(".course-inputs");
+    if (formErrors.length > 0) {
+        let inputParent = document.getElementById(formErrors[0].id).parentElement;
+        if (inputParent.classList.contains("tooltip-container")) {
+            inputParent = inputParent.parentElement;
+        }
+        inputParent.scrollIntoView({behavior: 'smooth', block: 'center'})
+        await wait(250);
+        setFormErrors(formErrors);
+        return;
+    };
+
     const courseName = document.getElementById("course-name").value;
     const courseCertificate = document.getElementById("course-certificate").files[0];
 
@@ -228,7 +260,19 @@ function saveCourseItem(event, courses, setCourses) {
     setCourses(newCourses)
 }
 
-function saveExperienceItem(event, experiences, setExperiences) {
+async function saveExperienceItem(event, experiences, setExperiences, setFormErrors) {
+    const formErrors = validateForm(".experience-inputs");
+    if (formErrors.length > 0) {
+        let inputParent = document.getElementById(formErrors[0].id).parentElement;
+        if (inputParent.classList.contains("tooltip-container")) {
+            inputParent = inputParent.parentElement;
+        }
+        inputParent.scrollIntoView({behavior: 'smooth', block: 'center'})
+        await wait(250);
+        setFormErrors(formErrors);
+        return;
+    };
+
     const experienceEmployer = document.getElementById("experience-employer");
     const experienceTitle = document.getElementById("experience-title");
     const experienceYears = document.getElementById("experience-years");
@@ -248,20 +292,26 @@ function saveExperienceItem(event, experiences, setExperiences) {
     setExperiences(newExperiences)
 }
 
-function getCoursesComponents(courses) {
+function getCoursesComponents(courses, formErrorsArray) {
     let components;
 
     if (courses.isAdding) {
         components =
             <>
                 <div className="form-block tight">
-                    <label htmlFor="course-name">إسم الدورة</label>
+                    <div className='tooltip-container'>
+                        <label htmlFor="course-name">إسم الدورة</label>
+                        {getErrorForm("course-name", formErrorsArray)}
+                    </div>
                     <input required type="text" name="courseName" id="course-name" />
                 </div>
 
                 <div className="form-block tight">
                     <label htmlFor="course-certificate">شهادة الدورة</label>
-                    <input type="file" name="courseCertificate" id="course-certificate" accept='.png, .jpeg, .jpg, .pdf' />
+                    <div className='tooltip-container'>
+                        <input type="file" name="courseCertificate" id="course-certificate" accept='.png, .jpeg, .jpg, .pdf' />
+                        {getErrorForm("course-certificate", formErrorsArray, "tooltip-below")}
+                    </div>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "center" }}>
@@ -302,15 +352,16 @@ function getCoursesComponents(courses) {
     return components;
 }
 
-function getExperienceComponents(experiences) {
+function getExperienceComponents(experiences, formErrorsArray) {
     let components;
 
     if (experiences.isAdding) {
         components =
-            <>
+            <div className='experience-inputs'>
                 <div className="form-block tight">
                     <div className='tooltip-container'>
                         <label htmlFor="experience-employer">جهة العمل</label>
+                        {getErrorForm("experience-employer", formErrorsArray)}
                     </div>
                     <input required type="text" name="experienceEmployer" id="experience-employer" />
                 </div>
@@ -318,6 +369,7 @@ function getExperienceComponents(experiences) {
                 <div className="form-block tight">
                     <div className='tooltip-container'>
                         <label htmlFor="experience-title">المسمى الوظيفي</label>
+                        {getErrorForm("experience-title", formErrorsArray)}
                     </div>
                     <input required type="text" name="experienceTitle" id="experience-title" />
                 </div>
@@ -325,22 +377,25 @@ function getExperienceComponents(experiences) {
                 <div className="form-block tight">
                     <div className='tooltip-container'>
                         <label htmlFor="experience-years">سنوات الخدمة</label>
+                        {getErrorForm("experience-years", formErrorsArray)}
                     </div>
                     <input required type="number" name="experienceYears" id="experience-years" />
                 </div>
 
 
                 <div className="form-block tight">
+                    <label htmlFor="experience-quit">سبب ترك العمل</label>
                     <div className='tooltip-container'>
-                        <label htmlFor="experience-quit">سبب ترك العمل</label>
+                        <input required type="text" name="experienceQuit" id="experience-quit" />
+                        {getErrorForm("experience-quit", formErrorsArray, "tooltip-below")}
                     </div>
-                    <input required type="text" name="experienceQuit" id="experience-quit" />
                 </div>
 
 
                 <div className="form-block tight">
                     <div className='tooltip-container'>
                         <label htmlFor="experience-salary">الراتب</label>
+                        {getErrorForm("experience-salary", formErrorsArray)}
                     </div>
                     <input type="number" name="experienceSalary" id="experience-salary" min={0} max={999999} />
                 </div>
@@ -354,12 +409,15 @@ function getExperienceComponents(experiences) {
                         <span>إلغاء</span>
                     </button>
                 </div>
-            </>
+            </div>
     } else {
         const expertiseCertificate = experiences.list.length > 0 &&
             <div className="form-block" key={"experience-certificate"}>
                 <label htmlFor="experience-certificate">شهادة التأمينات</label>
-                <input required type="file" name="expertiseCertificate" id="experience-certificate" accept='.png, .jpeg, .jpg, .pdf' />
+                <div className='tooltip-container'>
+                    <input type="file" name="expertiseCertificate" id="experience-certificate" accept='.png, .jpeg, .jpg, .pdf' />
+                    {getErrorForm("experience-certificate", formErrorsArray, "tooltip-below")}
+                </div>
             </div>
             ;
 
@@ -419,11 +477,33 @@ function getExperienceComponents(experiences) {
     return components;
 }
 
+function getErrorForm(inputId, formErrorsArray = [], errorType = "tooltip-right") {
+    /*
+        errorType can be one of the two:
+        • tooltip-right
+        • tooltip-below
+
+        Note: each one must be in specific circumstances
+     */
+
+    const errorInfo = formErrorsArray.find((error) => {
+        return error.id === inputId;
+    })
+    let errorForm;
+    if (errorInfo) {
+        errorForm =
+        <aside className={`s-tooltip ${errorType}`}>{errorInfo.reason}</aside>
+    }
+
+    return errorForm;
+}
+
 export function Job() {
     const [selectedMarital, setSelectedMarital] = useState(false);
     const [selectedDegree, setSelectedDegree] = useState(false);
     const [courses, setCourses] = useState({ isAdding: false, list: [] });
     const [experiences, setExperiences] = useState({ isAdding: false, list: [] });
+    const formErrors = useArray([]);
 
     useEffect(() => {
         function onDegreeChange() {
@@ -443,6 +523,12 @@ export function Job() {
         const spinner = document.querySelector(".application-spinner");
         spinner.style.display = "none";
 
+        document.querySelectorAll('input').forEach((value) => {
+            value.onchange = function(e) {
+                console.log("e => ", e.target.files[0])
+            }
+        })
+
         return () => {
             degree.removeEventListener("change", onDegreeChange)
             maritalStatus.removeEventListener("change", onMaritalStatusChange)
@@ -451,21 +537,14 @@ export function Job() {
 
     useEffect(() => {
         if (courses.isAdding) {
-            function doSaveCourse(e) {
-                saveCourseItem.call(this, e, courses, setCourses)
-            }
-
             function doCancelCourse(e) {
                 cancelItem.call(this, e, courses, setCourses)
             }
 
-            const saveCourseButton = document.querySelector(".course-save-btn");
             const cancelCourseButton = document.querySelector(".course-cancel-btn");
-            saveCourseButton.addEventListener("click", doSaveCourse)
             cancelCourseButton.addEventListener("click", doCancelCourse)
 
             return () => {
-                saveCourseButton.removeEventListener("click", doSaveCourse)
                 cancelCourseButton.removeEventListener("click", doCancelCourse)
             }
         } else {
@@ -488,21 +567,14 @@ export function Job() {
 
     useEffect(() => {
         if (experiences.isAdding) {
-            function doSaveExperience(e) {
-                saveExperienceItem.call(this, e, experiences, setExperiences)
-            }
-
             function doCancelExperience(e) {
                 cancelItem.call(this, e, experiences, setExperiences)
             }
 
-            const saveExperienceButton = document.querySelector(".experience-save-btn");
             const cancelExperienceButton = document.querySelector(".experience-cancel-btn");
-            saveExperienceButton.addEventListener("click", doSaveExperience)
             cancelExperienceButton.addEventListener("click", doCancelExperience)
 
             return () => {
-                saveExperienceButton.removeEventListener("click", doSaveExperience)
                 cancelExperienceButton.removeEventListener("click", doCancelExperience)
             }
         } else {
@@ -525,15 +597,41 @@ export function Job() {
 
     useEffect(() => {
         function doFormSubmit(e) {
-            onFormSubmit.call(this, e, courses, experiences)
+            onFormSubmit.call(this, e, courses, experiences, formErrors.set)
         };
         const form = document.getElementById("form")
         form.addEventListener("submit", doFormSubmit);
 
+        const saveCourseButton = document.querySelector(".course-save-btn");
+        let doSaveCourse;
+        if (courses.isAdding) {
+            doSaveCourse = function(e) {
+                saveCourseItem.call(this, e, courses, setCourses, formErrors.set)
+            }
+            saveCourseButton.addEventListener("click", doSaveCourse)
+        }
+
+        const saveExperienceButton = document.querySelector(".experience-save-btn");
+        let doSaveExperience;
+        if (experiences.isAdding) {
+            doSaveExperience = function(e) {
+                saveExperienceItem.call(this, e, experiences, setExperiences, formErrors.set)
+            }
+            saveExperienceButton.addEventListener("click", doSaveExperience)
+        }
+
         return () => {
             form.removeEventListener("submit", doFormSubmit)
+
+            if (courses.isAdding) {
+                saveCourseButton.removeEventListener("click", doSaveCourse)
+            }
+
+            if (experiences.isAdding) {
+                saveExperienceButton.removeEventListener("click", doSaveExperience)
+            }
         }
-    }, [courses, experiences])
+    }, [courses, experiences, formErrors])
 
     return (
         <>
@@ -638,6 +736,7 @@ export function Job() {
                         <div className="form-block">
                             <div className='tooltip-container'>
                                 <label htmlFor="name">الإسم</label>
+                                {getErrorForm("name", formErrors.array)}
                             </div>
                             <input required type="text" name="name" id="name" placeholder="الإسم الرباعي" />
                         </div>
@@ -646,6 +745,7 @@ export function Job() {
 
                             <div className='tooltip-container' >
                                 <p>الجنس</p>
+                                {getErrorForm("sex", formErrors.array)}
                             </div>
 
 
@@ -661,35 +761,39 @@ export function Job() {
                         </div>
 
                         <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="id-number">رقم الهوية/الإقامة</label>
-                            </div>
+                            <label htmlFor="id-number">رقم الهوية/الإقامة</label>
 
-                            <input required type="number" name="idNumber" id="id-number"/>
+                            <div className='tooltip-container'>
+                                <input required type="number" name="idNumber" id="id-number"/>
+                                {getErrorForm("id-number", formErrors.array, "tooltip-below")}
+                            </div>
                         </div>
 
                         <div className="form-block">
-                            <div className='tooltip-container'>
                                 <label htmlFor="birthDate">تاريخ الميلاد</label>
+                            <div className='tooltip-container'>
+                                <input required type="date" name="birthDate" id="birthDate" />
+                                {getErrorForm("birthDate", formErrors.array, "tooltip-below")}
                             </div>
-                            <input required type="date" name="birthDate" id="birthDate" />
                         </div>
 
                         <div className="form-block">
+                            <label htmlFor="marital-status">الحالة الإجتماعية</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="marital-status">الحالة الإجتماعية</label>
+                                <select name="maritalStatus" id="marital-status" defaultValue={"default"}>
+                                    <option value="default" disabled>يرجى الإختيار</option>
+                                    {getMaritalStatus()}
+                                </select>
+                                {getErrorForm("marital-status", formErrors.array, "tooltip-below")}
                             </div>
-                            <select name="maritalStatus" id="marital-status" defaultValue={"default"}>
-                                <option value="default" disabled>يرجى الإختيار</option>
-                                {getMaritalStatus()}
-                            </select>
 
-                            {getMaritalComponent(selectedMarital)}
+                            {getMaritalComponent(selectedMarital, formErrors.array)}
                         </div>
 
                         <div className="form-block">
                             <div className='tooltip-container'>
                                 <label htmlFor="country">الجنسية</label>
+                                {getErrorForm("country", formErrors.array)}
                             </div>
                             <select name="nationality" id="country" defaultValue={"default"}>
                                 <option value="default" disabled>يرجى الإختيار</option>
@@ -698,15 +802,17 @@ export function Job() {
                         </div>
 
                         <div className="form-block">
+                            <label htmlFor="phone">رقم الجوال</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="phone">رقم الجوال</label>
+                                <input required type="tel" name="telephone" id="phone" placeholder='مثال: 05xxxxxxxx' />
+                                {getErrorForm("phone", formErrors.array, "tooltip-below")}
                             </div>
-                            <input required type="tel" name="telephone" id="phone" placeholder='مثال: 05xxxxxxxx' />
                         </div>
 
                         <div className="form-block">
                             <div className='tooltip-container'>
                                 <label htmlFor="city">المدينة</label>
+                                {getErrorForm("city", formErrors.array)}
                             </div>
                             <select name="city" id="city" defaultValue={"default"}>
                                 <option value="default" disabled>يرجى الإختيار</option>
@@ -717,22 +823,25 @@ export function Job() {
                         <div className="form-block">
                             <div className='tooltip-container'>
                                 <label htmlFor="address">العنوان</label>
+                                {getErrorForm("address", formErrors.array)}
                             </div>
                             <input required type="text" name="address" id="address" placeholder="العنوان" />
                         </div>
 
                         <div className="form-block">
+                            <label htmlFor="email">البريد الإلكتروني</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="email">البريد الإلكتروني</label>
+                                <input required type="email" name="email" id="email" placeholder="example@shubra.com" />
+                                {getErrorForm("email", formErrors.array, "tooltip-below")}
                             </div>
-                            <input required type="email" name="email" id="email" placeholder="example@shubra.com" />
                         </div>
 
                         <div className="form-block">
+                            <label htmlFor="cv">السيرة الذاتية</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="cv">السيرة الذاتية</label>
+                                <input type="file" name="cv" id="cv" placeholder="أدخل سيرتك الذاتية" accept='.png, .jpeg, .jpg, .pdf' />
+                                {getErrorForm("cv", formErrors.array, "tooltip-below")}
                             </div>
-                            <input required type="file" name="cv" id="cv" placeholder="أدخل سيرتك الذاتية" accept='.png, .jpeg, .jpg, .pdf' />
                         </div>
                     </section>
 
@@ -740,29 +849,32 @@ export function Job() {
                         <h3>المؤهل العلمي</h3>
 
                         <div className="form-block">
+                            <label htmlFor="degree">الشهادة الحاصل عليها</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="degree">الشهادة الحاصل عليها</label>
+                                <select name="degree" id="degree" defaultValue={"default"}>
+                                    <option value="default" disabled>يرجى الإختيار</option>
+                                    {getDegrees()}
+                                </select>
+                                {getErrorForm("degree", formErrors.array, "tooltip-below")}
                             </div>
-                            <select name="degree" id="degree" defaultValue={"default"}>
-                                <option value="default" disabled>يرجى الإختيار</option>
-                                {getDegrees()}
-                            </select>
                         </div>
 
-                        {getDegreeComponent(selectedDegree)}
+                        {getDegreeComponent(selectedDegree, formErrors.array)}
 
                         <div className="form-block">
                             <div className='tooltip-container'>
                                 <label htmlFor="graduate-date">سنة التخرج</label>
+                                {getErrorForm("graduate-date", formErrors.array)}
                             </div>
                             <input required type="number" name="graduateDate" id="graduate-date" min="1900" max="2099" step="1" placeholder="سنة التخرج" />
                         </div>
 
                         <div className="form-block">
+                            <label htmlFor="certificate">صورة الشهادة</label>
                             <div className='tooltip-container'>
-                                <label htmlFor="certificate">صورة الشهادة</label>
+                                <input type="file" name="certificate" id="certificate" placeholder="رفع ملف أو صورة الشهادة" accept='.png, .jpeg, .jpg, .pdf' />
+                                {getErrorForm("certificate", formErrors.array, "tooltip-below")}
                             </div>
-                            <input required type="file" name="certificate" id="certificate" placeholder="رفع ملف أو صورة الشهادة" accept='.png, .jpeg, .jpg, .pdf' />
                         </div>
 
                     </section>
@@ -779,8 +891,8 @@ export function Job() {
                             </span>
                         </div>
 
-                        <div className="form-block">
-                            {getCoursesComponents(courses)}
+                        <div className="form-block course-inputs">
+                            {getCoursesComponents(courses, formErrors.array)}
                         </div>
                     </section>
 
@@ -796,7 +908,7 @@ export function Job() {
                             </span>
                         </div>
 
-                        {getExperienceComponents(experiences)}
+                        {getExperienceComponents(experiences, formErrors.array)}
                     </section>
 
                     <div className="form-block">
@@ -809,7 +921,7 @@ export function Job() {
                     <div className="form-block">
                         <button id='submitBtn' className='form-button' type="submit">
                             <span>تقديم</span>
-                            <span class="application-spinner" role="status" aria-hidden="true"></span>
+                            <span className="application-spinner" role="status" aria-hidden="true"></span>
                         </button>
                     </div>
 
