@@ -177,7 +177,7 @@ function getMaritalComponent(selectedMarital, formErrorsArray) {
         <>
             <label htmlFor="marital-status-other">الحالة الإجتماعية</label>
             <div className='tooltip-container'>
-            <input required type="text" name="maritalStatusOther" id="marital-status-other" placeholder="يرجى كتابة حالتك الإجتماعية" />
+            <input type="text" name="maritalStatusOther" id="marital-status-other" placeholder="يرجى كتابة حالتك الإجتماعية" />
                 {getErrorForm("marital-status-other", formErrorsArray, "tooltip-below")}
             </div>
         </>
@@ -192,7 +192,7 @@ function getDegreeComponent(selectedDegree, formErrorsArray) {
                 <div className="form-block">
                     <label htmlFor="gpa">المعدل التراكمي</label>
                     <div className='tooltip-container'>
-                        <input required type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
+                        <input type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
                         {getErrorForm("gpa", formErrorsArray, "tooltip-below")}
                     </div>
                 </div>
@@ -204,7 +204,7 @@ function getDegreeComponent(selectedDegree, formErrorsArray) {
                         <label htmlFor="field">التخصص</label>
                         {getErrorForm("field", formErrorsArray)}
                     </div>
-                    <input required type="text" name="field" id="field" placeholder="التخصص الجامعي" />
+                    <input type="text" name="field" id="field" placeholder="التخصص الجامعي" />
                 </div>
                 ;
         }
@@ -303,7 +303,7 @@ function getCoursesComponents(courses, formErrorsArray) {
                         <label htmlFor="course-name">إسم الدورة</label>
                         {getErrorForm("course-name", formErrorsArray)}
                     </div>
-                    <input required type="text" name="courseName" id="course-name" />
+                    <input type="text" name="courseName" id="course-name" />
                 </div>
 
                 <div className="form-block tight">
@@ -363,7 +363,7 @@ function getExperienceComponents(experiences, formErrorsArray) {
                         <label htmlFor="experience-employer">جهة العمل</label>
                         {getErrorForm("experience-employer", formErrorsArray)}
                     </div>
-                    <input required type="text" name="experienceEmployer" id="experience-employer" />
+                    <input type="text" name="experienceEmployer" id="experience-employer" />
                 </div>
 
                 <div className="form-block tight">
@@ -371,7 +371,7 @@ function getExperienceComponents(experiences, formErrorsArray) {
                         <label htmlFor="experience-title">المسمى الوظيفي</label>
                         {getErrorForm("experience-title", formErrorsArray)}
                     </div>
-                    <input required type="text" name="experienceTitle" id="experience-title" />
+                    <input type="text" name="experienceTitle" id="experience-title" />
                 </div>
 
                 <div className="form-block tight">
@@ -379,14 +379,14 @@ function getExperienceComponents(experiences, formErrorsArray) {
                         <label htmlFor="experience-years">سنوات الخدمة</label>
                         {getErrorForm("experience-years", formErrorsArray)}
                     </div>
-                    <input required type="number" name="experienceYears" id="experience-years" />
+                    <input type="number" name="experienceYears" id="experience-years" />
                 </div>
 
 
                 <div className="form-block tight">
                     <label htmlFor="experience-quit">سبب ترك العمل</label>
                     <div className='tooltip-container'>
-                        <input required type="text" name="experienceQuit" id="experience-quit" />
+                        <input type="text" name="experienceQuit" id="experience-quit" />
                         {getErrorForm("experience-quit", formErrorsArray, "tooltip-below")}
                     </div>
                 </div>
@@ -496,6 +496,16 @@ function getErrorForm(inputId, formErrorsArray = [], errorType = "tooltip-right"
     }
 
     return errorForm;
+}
+
+function getRateOptions() {
+    const options = [];
+    for (let rate = 1; rate <= 10; rate++) {
+        options.push(
+            <option value={rate} key={rate}>{rate}</option>
+        )
+    }
+    return options;
 }
 
 export function Job() {
@@ -738,7 +748,7 @@ export function Job() {
                                 <label htmlFor="name">الإسم</label>
                                 {getErrorForm("name", formErrors.array)}
                             </div>
-                            <input required type="text" name="name" id="name" placeholder="الإسم الرباعي" />
+                            <input type="text" name="name" id="name" placeholder="الإسم الرباعي" />
                         </div>
 
                         <div className="form-block">
@@ -750,12 +760,12 @@ export function Job() {
 
 
                             <div className='radio-choice'>
-                                <input required type="radio" name="sex" id="male" value={'ذكر'} />
+                                <input type="radio" name="sex" id="male" value={'ذكر'} />
                                 <label htmlFor="male">ذكر</label>
                             </div>
 
                             <div className='radio-choice'>
-                                <input required type="radio" name="sex" id="female" value={'أنثى'} />
+                                <input type="radio" name="sex" id="female" value={'أنثى'} />
                                 <label htmlFor="female">أنثى</label>
                             </div>
                         </div>
@@ -764,7 +774,7 @@ export function Job() {
                             <label htmlFor="id-number">رقم الهوية/الإقامة</label>
 
                             <div className='tooltip-container'>
-                                <input required type="number" name="idNumber" id="id-number"/>
+                                <input type="number" name="idNumber" id="id-number"/>
                                 {getErrorForm("id-number", formErrors.array, "tooltip-below")}
                             </div>
                         </div>
@@ -772,7 +782,7 @@ export function Job() {
                         <div className="form-block">
                                 <label htmlFor="birthDate">تاريخ الميلاد</label>
                             <div className='tooltip-container'>
-                                <input required type="date" name="birthDate" id="birthDate" />
+                                <input type="date" name="birthDate" id="birthDate" />
                                 {getErrorForm("birthDate", formErrors.array, "tooltip-below")}
                             </div>
                         </div>
@@ -804,7 +814,7 @@ export function Job() {
                         <div className="form-block">
                             <label htmlFor="phone">رقم الجوال</label>
                             <div className='tooltip-container'>
-                                <input required type="tel" name="telephone" id="phone" placeholder='مثال: 05xxxxxxxx' />
+                                <input type="tel" name="telephone" id="phone" placeholder='مثال: 05xxxxxxxx' />
                                 {getErrorForm("phone", formErrors.array, "tooltip-below")}
                             </div>
                         </div>
@@ -825,13 +835,13 @@ export function Job() {
                                 <label htmlFor="address">العنوان</label>
                                 {getErrorForm("address", formErrors.array)}
                             </div>
-                            <input required type="text" name="address" id="address" placeholder="العنوان" />
+                            <input type="text" name="address" id="address" placeholder="العنوان" />
                         </div>
 
                         <div className="form-block">
                             <label htmlFor="email">البريد الإلكتروني</label>
                             <div className='tooltip-container'>
-                                <input required type="email" name="email" id="email" placeholder="example@shubra.com" />
+                                <input type="email" name="email" id="email" placeholder="example@shubra.com" />
                                 {getErrorForm("email", formErrors.array, "tooltip-below")}
                             </div>
                         </div>
@@ -866,7 +876,7 @@ export function Job() {
                                 <label htmlFor="graduate-date">سنة التخرج</label>
                                 {getErrorForm("graduate-date", formErrors.array)}
                             </div>
-                            <input required type="number" name="graduateDate" id="graduate-date" min="1900" max="2099" step="1" placeholder="سنة التخرج" />
+                            <input type="number" name="graduateDate" id="graduate-date" min="1900" max="2099" step="1" placeholder="سنة التخرج" />
                         </div>
 
                         <div className="form-block">
@@ -909,6 +919,51 @@ export function Job() {
                         </div>
 
                         {getExperienceComponents(experiences, formErrors.array)}
+                    </section>
+
+                    <section className='form-section'>
+                        <h3>بتقييم من 0 إلى 10 حيث أن 10 تعني ممتاز جدًا و 0 تعني سيء جدًا</h3>
+
+                        <div className="form-block">
+                            <label htmlFor="computer-rate">كم تقيم نفسك في إستعمال الحاسب الآلي</label>
+                            <div className='tooltip-container'>
+                                <select name="computerRate" id="computer-rate" defaultValue={"default"}>
+                                    <option value="default" disabled>يرجى الإختيار</option>
+                                    {getRateOptions()}
+                                </select>
+                                {getErrorForm("computer-rate", formErrors.array, "tooltip-below")}
+                            </div>
+                        </div>
+
+                        <div className="form-block">
+                            <label htmlFor="english-rate">كم تقيم نفسك في اللغة الإنجليزية</label>
+                            <div className='tooltip-container'>
+                                <select name="englishRate" id="english-rate" defaultValue={"default"}>
+                                    <option value="default" disabled>يرجى الإختيار</option>
+                                    {getRateOptions()}
+                                </select>
+                                {getErrorForm("english-rate", formErrors.array, "tooltip-below")}
+                            </div>
+                        </div>
+
+                        <div className="form-block">
+                            <label htmlFor="flexibility-rate">كم تقيم نفسك في المرونة في العمل</label>
+                            <div className='tooltip-container'>
+                                <select name="flexibilityRate" id="flexibility-rate" defaultValue={"default"}>
+                                    <option value="default" disabled>يرجى الإختيار</option>
+                                    {getRateOptions()}
+                                </select>
+                                {getErrorForm("flexibility-rate", formErrors.array, "tooltip-below")}
+                            </div>
+                        </div>
+
+                        <div className="form-block">
+                            <div className='tooltip-container'>
+                                <label htmlFor="self-talk">تكلم عن نفسك</label>
+                                {getErrorForm("self-talk", formErrors.array)}
+                            </div>
+                            <textarea name='selfTalk' id='self-talk'></textarea>
+                        </div>
                     </section>
 
                     <div className="form-block">

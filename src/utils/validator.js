@@ -1,30 +1,34 @@
 /*  Special validation is for checking for an input value and making
     sure that it meets specific requirements.   */
 const validateSettings = {
-    'name': [notEmpty, noSpecialCharacters, correctName],
+    'name': [notEmpty, noSpecialCharacters, correctName, shortLength],
     'id-number': [notEmpty, idNumber],
     'birthDate': [correctBirthday],
     'marital-status': [isSelected],
-    'marital-status-other': [notEmpty, noSpecialCharacters],
+    'marital-status-other': [notEmpty, noSpecialCharacters, shortLength],
     'country': [isSelected],
     'phone': [phoneNumber],
     'city': [isSelected],
-    'address': [notEmpty, noHardSpecialCharacters],
-    'email': [emailAdress],
+    'address': [notEmpty, noHardSpecialCharacters, shortLength],
+    'email': [emailAdress, shortLength],
     'cv': [filesNotEmpty, fileTypeRestriction, fileSizeLimit],
     'degree': [isSelected],
     'graduate-date': [integerOnly, yearOnly],
     'gpa': [gpaOnly],
-    'field': [notEmpty, noHardSpecialCharacters],
+    'field': [notEmpty, noHardSpecialCharacters, shortLength],
     'certificate': [filesNotEmpty, fileTypeRestriction, fileSizeLimit],
-    'course-name': [notEmpty, noHardSpecialCharacters],
+    'course-name': [notEmpty, noHardSpecialCharacters, shortLength],
     'course-certificate': [fileTypeRestriction, fileSizeLimit],
-    'experience-employer': [notEmpty, noHardSpecialCharacters],
-    'experience-title': [notEmpty, noHardSpecialCharacters],
-    'experience-years': [integerOnly, positiveNumber],
-    'experience-quit': [notEmpty, noHardSpecialCharacters],
-    'experience-salary': [integerOnly, positiveNumber],
-    'experience-certificate': [filesNotEmpty, fileTypeRestriction, fileSizeLimit]
+    'experience-employer': [notEmpty, noHardSpecialCharacters, shortLength],
+    'experience-title': [notEmpty, noHardSpecialCharacters, shortLength],
+    'experience-years': [integerOnly, positiveNumber, shortLength],
+    'experience-quit': [notEmpty, noHardSpecialCharacters, shortLength],
+    'experience-salary': [integerOnly, positiveNumber, shortLength],
+    'experience-certificate': [filesNotEmpty, fileTypeRestriction, fileSizeLimit],
+    'computer-rate': [isSelected],
+    'english-rate': [isSelected],
+    'flexibility-rate': [isSelected],
+    'self-talk': [notEmpty, paragraphLength]
 }
 
 /*
@@ -54,7 +58,7 @@ const allowedFiles = {
 }
 
 function validateForm(rootElement = ".application-section"){
-    const allInputs = document.querySelectorAll(`${rootElement} input,${rootElement} select`);
+    const allInputs = document.querySelectorAll(`${rootElement} input,${rootElement} select,${rootElement} textarea`);
     let inputValidateSettings;
     let errorInfo;
     let inputValue;
@@ -250,6 +254,22 @@ function fileSizeLimit(input){
     return {
         isValid: isAllowedSize || !file,
         reason: `يجب أن لايتجاوز حجم الملف عن ${maxSize_MB.toLocaleString("ar-SA")} ميجا بايت`
+    }
+}
+
+function paragraphLength(string) {
+    const maxCharacters = 5000;
+    return {
+        isValid: string.length <= maxCharacters,
+        reason: `يجب أن لايتجاوز طول النص عن ${maxCharacters.toLocaleString("ar-SA")} حرف`
+    }
+}
+
+function shortLength(string) {
+    const maxCharacters = 100;
+    return {
+        isValid: string.length <= maxCharacters,
+        reason: `يجب أن لايتجاوز طول النص عن ${maxCharacters.toLocaleString("ar-SA")} حرف`
     }
 }
 
