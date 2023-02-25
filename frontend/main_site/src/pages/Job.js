@@ -96,7 +96,7 @@ async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequ
 
     toggleAllInputs(true);
     setFormErrors([])
-    document.querySelector(".application-spinner").style.display = "unset";
+    document.querySelector(".loading-spinner-button").style.display = "unset";
     let fetched;
     try {
         console.time("fetch")
@@ -113,7 +113,7 @@ async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequ
         console.error(error);
     } finally {
         toggleAllInputs(false);
-        document.querySelector(".application-spinner").style.display = "none";
+        document.querySelector(".loading-spinner-button").style.display = "none";
 
         if (!fetched) {
             setServerRequestStatus({
@@ -593,7 +593,7 @@ export function Job() {
         maritalStatus.addEventListener("change", onMaritalStatusChange)
 
 
-        const spinner = document.querySelector(".application-spinner");
+        const spinner = document.querySelector(".loading-spinner-button");
         spinner.style.display = "none";
 
         return () => {
@@ -1033,7 +1033,7 @@ export function Job() {
                     <div className="form-block">
                         <button id='submitBtn' className='form-button' type="submit">
                             <span>تقديم</span>
-                            <span className="application-spinner" role="status" aria-hidden="true"></span>
+                            <span className="loading-spinner-button" role="status" aria-hidden="true"></span>
                         </button>
 
                         {getServerRequestStatus(serverRequestStatus)}

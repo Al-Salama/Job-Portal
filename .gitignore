@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+/frontend/main_site/node_modules
 /.pnp
 .pnp.js
 
@@ -23,6 +23,6 @@ yarn-debug.log*
 yarn-error.log*
 
 #server
-/server/node_modules
-/server/application_files
-/server/*.env
+/backend/node_modules
+/backend/application_files
+/backend/*.env

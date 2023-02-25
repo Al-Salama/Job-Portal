@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { Job } from './pages/Job';
 import logo from './pages/imgs/logo.png'
+import './assets/global.css';
 
 function App() {
   return (

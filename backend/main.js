@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+require("./admin_main")
 
 const fs = require('fs');
 const { SqlConnection } = require("./utils/sql");
