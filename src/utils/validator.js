@@ -1,12 +1,13 @@
 /*  Special validation is for checking for an input value and making
     sure that it meets specific requirements.   */
+
 const validateSettings = {
     'name': [notEmpty, noSpecialCharacters, correctName, shortLength],
     'id-number': [notEmpty, idNumber],
     'birthDate': [correctBirthday],
     'marital-status': [isSelected],
     'marital-status-other': [notEmpty, noSpecialCharacters, shortLength],
-    'country': [isSelected],
+    'nationality': [isSelected],
     'phone': [phoneNumber],
     'city': [isSelected],
     'address': [notEmpty, noHardSpecialCharacters, shortLength],
@@ -37,13 +38,16 @@ instead of the input value;
 */
 const specialInputs = {
     'marital-status': true,
-    'country': true,
+    'nationality': true,
     'city': true,
     'cv': true,
     'degree': true,
     'certificate': true,
     'course-certificate': true,
     'experience-certificate': true,
+    'computer-rate': true,
+    'english-rate': true,
+    'flexibility-rate': true,
 }
 
 const allowedFiles = {
@@ -63,6 +67,7 @@ function validateForm(rootElement = ".application-section"){
     let errorInfo;
     let inputValue;
     const errors = [];
+    const sexChecks = {};
     for (const input of allInputs) {
         inputValidateSettings = validateSettings[input.id]
         if (inputValidateSettings) {
@@ -83,6 +88,26 @@ function validateForm(rootElement = ".application-section"){
                     break;
                 }
             }
+        } else {
+            let errorMessage;
+            if (input.id === "male") {
+                if (!input.checked && 'female' in sexChecks && !sexChecks.female) {
+                    errorMessage = {
+                        id: "sex",
+                        reason: "هذا القسم مطلوب!"
+                    }
+                }
+                sexChecks.male = input.checked;
+            } else if (input.id === "female") {
+                if (!input.checked && 'male' in sexChecks && !sexChecks.male) {
+                    errorMessage = {
+                        id: "sex",
+                        reason: "هذا القسم مطلوب!"
+                    }
+                }
+                sexChecks.female = input.checked;
+            }
+            if (errorMessage) errors.push(errorMessage);
         }
     }
     return errors;

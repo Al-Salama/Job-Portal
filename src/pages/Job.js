@@ -5,6 +5,7 @@ import cities from '../data/cities'
 import countries from '../data/countries'
 import useArray from '../hooks/useArray';
 import validateForm from '../utils/validator';
+import formIds from '../data/inputs';
 
 function wait(ms) {
     return new Promise(
@@ -23,7 +24,27 @@ function toggleAllInputs(toggle) {
     }
 }
 
-async function onFormSubmit(e, courses, experience, setFormErrors) {
+function getFormData() {
+    const formData = new FormData();
+    let theInput;
+    let inputType;
+    for (const input of formIds) {
+        theInput = document.getElementById(input);
+        if (theInput) {
+            inputType = `${theInput.getAttribute("type")}`.toLowerCase();
+            if (inputType === "radio" && !theInput.checked) continue;
+
+            let inputValue = theInput.value;
+            if (inputType === "file") {
+                inputValue = theInput.files[0];
+            }
+            formData.append(theInput.getAttribute("name"), inputValue);
+        };
+    };
+    return formData;
+}
+
+async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequestStatus) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -41,79 +62,70 @@ async function onFormSubmit(e, courses, experience, setFormErrors) {
     };
 
     const form = document.getElementById("form");
-    const formData = new FormData(form);
+    const formData = getFormData();
 
-    const selectedDegree = (document.getElementById("degree").selectedIndex) - 1;
-    formData.set("degree", degrees[selectedDegree]);
-
-    const selectedMaritalStatus = (form.querySelector("select#marital-status").selectedIndex) - 1;
+    const martialStatusInput = form.querySelector("select#marital-status")
     {
-        let currentMaritalStatus;
-        if (selectedMaritalStatus === 2) {
-            currentMaritalStatus = formData.get("maritalStatusOther");
+        let currentMaritalStatus = martialStatusInput.value;
+        const martialStatusOther = formData.get("maritalStatusOther");
+        if (martialStatusOther) {
+            currentMaritalStatus = martialStatusOther;
             formData.delete("maritalStatusOther");
-        } else {
-            currentMaritalStatus = maritalStatus[selectedMaritalStatus]
         }
         formData.set("maritalStatus", currentMaritalStatus);
     }
 
-    courses.list.map((course, index) => {
-        formData.append(`courseName_${index}`, course.name);
-        formData.append(`courseCertificate_${index}`, course.file);
-        return null;
-    })
+    if (courses.list.length > 0) {
+        const sendCourseList = JSON.stringify(
+            courses.list.map((course, index) => {
+                const newServerList = {name: course.name}; // to be sent to the server.
 
-    experience.list.map((experience, index) => {
-        formData.append(`experienceEmployer_${index}`, experience.employer);
-        formData.append(`experienceTitle_${index}`, experience.title);
-        formData.append(`experienceYears_${index}`, experience.years);
-        formData.append(`experienceQuit_${index}`, experience.quit);
-        if (experience.salary) formData.append(`experienceSalary_${index}`, experience.salary);
+                if (course.file) {
+                    formData.append(`courseCertificate_${index}`, course.file);
+                }
+                return newServerList;
+            }), null, 4
+        )
+        formData.append("courses", sendCourseList);
+    }
 
-        return null;
-    })
+    if (experience.list.length > 0) {
+        const sendExperienceList = JSON.stringify(experience.list);
+        formData.append("experiences", sendExperienceList);
+    }
 
     toggleAllInputs(true);
+    setFormErrors([])
     document.querySelector(".application-spinner").style.display = "unset";
+    let fetched;
     try {
-        const fetched = await fetch("https://api.alsalamah506.sa/jobs/apply", {
+        console.time("fetch")
+        fetched = await fetch("http://localhost:506/jobs/apply", {
             method: "POST",
-            redirect: 'manual',
             body: formData,
+            credentials: "include",
+            headers: {
+                'Accept': 'application/json'
+            }
         })
-        if (!fetched.ok) {
-            alert('Unable to send your request')
-            return;
-        }
-
-        const response = await fetched.json()
-        console.log(response)
+        console.timeEnd("fetch");
     } catch (error) {
-        alert('Unable to send your request 2')
         console.error(error);
-        return;
     } finally {
         toggleAllInputs(false);
         document.querySelector(".application-spinner").style.display = "none";
-    }
-}
 
-function onDegreeSelect(setDegree) {
-    if (this.value === "default") {
-        setDegree(this.value);
-    } else {
-        setDegree(parseInt(this.value));
-    }
-}
+        if (!fetched) {
+            setServerRequestStatus({
+                success: false,
+                error: 503,
+                message: "Service Unavailable"
+            });
+            return;
+        }
 
-function onMaritalStatusSelect(setMaritalStatus) {
-    console.log(this.selectedIndex)
-    console.log(this.selectedOptions)
-    if (this.value === "default") {
-        setMaritalStatus(this.value);
-    } else {
-        setMaritalStatus(parseInt(this.value));
+        const response = await fetched.json();
+        setServerRequestStatus(response)
     }
 }
 
@@ -124,11 +136,11 @@ const degrees = [
     "دراسات عليا"
 ]
 
-const maritalStatus = [
-    "أعزب/عزباء",
-    "متزوج/ة",
-    "غير ذلك"
-]
+const maritalStatus = {
+    unMarried: "أعزب/عزباء",
+    married: "متزوج/ة",
+    other: "غير ذلك"
+}
 
 function getCities() {
     const options = [];
@@ -154,7 +166,7 @@ function getDegrees() {
     const degreeOptions = [];
     for (const id in degrees) {
         degreeOptions.push(
-            <option key={id} value={id}>{degrees[id]}</option>
+            <option key={id} value={degrees[id]}>{degrees[id]}</option>
         )
     }
     return degreeOptions;
@@ -162,16 +174,16 @@ function getDegrees() {
 
 function getMaritalStatus() {
     const maritalStatusOptions = [];
-    for (const id in maritalStatus) {
+    for (const [key, value] of Object.entries(maritalStatus)) {
         maritalStatusOptions.push(
-            <option key={id} value={id}>{maritalStatus[id]}</option>
+            <option key={key} value={value}>{value}</option>
         )
     }
     return maritalStatusOptions;
 }
 
 function getMaritalComponent(selectedMarital, formErrorsArray) {
-    if (typeof selectedMarital !== "number" || selectedMarital < 2) return;
+    if (selectedMarital !== 3) return;
 
     return (
         <>
@@ -185,31 +197,29 @@ function getMaritalComponent(selectedMarital, formErrorsArray) {
 }
 
 function getDegreeComponent(selectedDegree, formErrorsArray) {
-    let degreeComponent;
-    if (typeof selectedDegree === "number") {
-        if (selectedDegree === 0) {
-            degreeComponent =
-                <div className="form-block">
-                    <label htmlFor="gpa">المعدل التراكمي</label>
-                    <div className='tooltip-container'>
-                        <input type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
-                        {getErrorForm("gpa", formErrorsArray, "tooltip-below")}
-                    </div>
+    if (selectedDegree === 0)
+        return;
+    else if (selectedDegree === 1) {
+        return (
+            <div className="form-block">
+                <label htmlFor="gpa">المعدل التراكمي</label>
+                <div className='tooltip-container'>
+                    <input type="text" name="gpa" id="gpa" placeholder="المعدل التراكمي من 100%" />
+                    {getErrorForm("gpa", formErrorsArray, "tooltip-below")}
                 </div>
-                ;
-        } else {
-            degreeComponent =
-                <div className="form-block">
-                    <div className='tooltip-container'>
-                        <label htmlFor="field">التخصص</label>
-                        {getErrorForm("field", formErrorsArray)}
-                    </div>
-                    <input type="text" name="field" id="field" placeholder="التخصص الجامعي" />
+            </div>
+        )
+    } else {
+        return (
+            <div className="form-block">
+                <div className='tooltip-container'>
+                    <label htmlFor="field">التخصص</label>
+                    {getErrorForm("field", formErrorsArray)}
                 </div>
-                ;
-        }
+                <input type="text" name="field" id="field" placeholder="التخصص الجامعي" />
+            </div>
+        )
     }
-    return degreeComponent;
 }
 
 function addItem(event, courses, setCourses) {
@@ -477,6 +487,7 @@ function getExperienceComponents(experiences, formErrorsArray) {
     return components;
 }
 
+
 function getErrorForm(inputId, formErrorsArray = [], errorType = "tooltip-right") {
     /*
         errorType can be one of the two:
@@ -508,23 +519,75 @@ function getRateOptions() {
     return options;
 }
 
+const failureMessages = {
+    "400": {
+        message: "يرجى التأكد من ملئ النموذج بشكلٍ صحيح",
+        className: "alert-orange"
+    },
+    "429": {
+        message: "أنت تقوم بطلبات كثيرة جدًا، يرجى الإنتظار لوهلة قبل إجراء طلب آخر.",
+        className: "alert-orange"
+    },
+    "500": {
+        message: "حدث خطأ مع الخادم، يرجى المحاولة في وقتٍ لاحق أو إتصل بالمسؤولين",
+        className: "alert-red"
+    },
+    "503": {
+        message: "هذه الخدمة غير متاحة حاليًا، يرجى المحاولة لاحقًا",
+        className: ""
+    }
+}
+const successMessage = "لقد تم إرسال طلبك بنجاح، رقم الطلب هو: {applicationId}.\nسنرسل لك رسالة تأكيد على رقمك في الواتس أب!"
+
+function getServerRequestStatus(serverRequestStatus) {
+    if (typeof serverRequestStatus === "object") {
+        let className;
+        let message;
+        if (serverRequestStatus.success) {
+            className = "alert-green";
+            message = successMessage.replace("{applicationId}", `${serverRequestStatus.applicationId}`);
+        } else {
+            const failureSettings = failureMessages[serverRequestStatus.error];
+            if (failureSettings) {
+                className = failureSettings.className;
+                message = failureSettings.message;
+            } else {
+                className = "alert-red";
+                message = "لايمكن تنفيذ طلبك حاليًا، يرجى المحاولة لاحقًا"
+            }
+        }
+
+        return (
+            <div className={`alert ${className}`}>
+                <pre>
+                    {message}
+                </pre>
+            </div>
+        )
+    }
+    return null;
+}
+
 export function Job() {
     const [selectedMarital, setSelectedMarital] = useState(false);
     const [selectedDegree, setSelectedDegree] = useState(false);
     const [courses, setCourses] = useState({ isAdding: false, list: [] });
     const [experiences, setExperiences] = useState({ isAdding: false, list: [] });
     const formErrors = useArray([]);
+    const [serverRequestStatus, setServerRequestStatus] = useState(false);
+
 
     useEffect(() => {
         function onDegreeChange() {
-            onDegreeSelect.call(this, setSelectedDegree)
+            setSelectedDegree(this.selectedIndex)
         };
+
         const degree = document.getElementById("degree")
         degree.addEventListener("change", onDegreeChange)
 
 
         function onMaritalStatusChange() {
-            onMaritalStatusSelect.call(this, setSelectedMarital)
+            setSelectedMarital(this.selectedIndex);
         };
         const maritalStatus = document.getElementById("marital-status")
         maritalStatus.addEventListener("change", onMaritalStatusChange)
@@ -532,12 +595,6 @@ export function Job() {
 
         const spinner = document.querySelector(".application-spinner");
         spinner.style.display = "none";
-
-        document.querySelectorAll('input').forEach((value) => {
-            value.onchange = function(e) {
-                console.log("e => ", e.target.files[0])
-            }
-        })
 
         return () => {
             degree.removeEventListener("change", onDegreeChange)
@@ -607,7 +664,7 @@ export function Job() {
 
     useEffect(() => {
         function doFormSubmit(e) {
-            onFormSubmit.call(this, e, courses, experiences, formErrors.set)
+            onFormSubmit.call(this, e, courses, experiences, formErrors.set, setServerRequestStatus)
         };
         const form = document.getElementById("form")
         form.addEventListener("submit", doFormSubmit);
@@ -754,7 +811,7 @@ export function Job() {
                         <div className="form-block">
 
                             <div className='tooltip-container' >
-                                <p>الجنس</p>
+                                <p id='sex'>الجنس</p>
                                 {getErrorForm("sex", formErrors.array)}
                             </div>
 
@@ -802,10 +859,10 @@ export function Job() {
 
                         <div className="form-block">
                             <div className='tooltip-container'>
-                                <label htmlFor="country">الجنسية</label>
-                                {getErrorForm("country", formErrors.array)}
+                                <label htmlFor="nationality">الجنسية</label>
+                                {getErrorForm("nationality", formErrors.array)}
                             </div>
-                            <select name="nationality" id="country" defaultValue={"default"}>
+                            <select name="nationality" id="nationality" defaultValue={"default"}>
                                 <option value="default" disabled>يرجى الإختيار</option>
                                 {getCountries()}
                             </select>
@@ -814,7 +871,7 @@ export function Job() {
                         <div className="form-block">
                             <label htmlFor="phone">رقم الجوال</label>
                             <div className='tooltip-container'>
-                                <input type="tel" name="telephone" id="phone" placeholder='مثال: 05xxxxxxxx' />
+                                <input type="tel" name="phone" id="phone" placeholder='مثال: 05xxxxxxxx' />
                                 {getErrorForm("phone", formErrors.array, "tooltip-below")}
                             </div>
                         </div>
@@ -978,6 +1035,8 @@ export function Job() {
                             <span>تقديم</span>
                             <span className="application-spinner" role="status" aria-hidden="true"></span>
                         </button>
+
+                        {getServerRequestStatus(serverRequestStatus)}
                     </div>
 
                 </form>

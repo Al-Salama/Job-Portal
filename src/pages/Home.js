@@ -49,14 +49,13 @@ function getJobs() {
                     <p className="job-desc">
                         {(
                             () =>{
-                                const text = [];
-                                job.jobDesc.map((str) =>{
-                                    text.push(<>
-                                        {str} <br/>
-                                    </>)
-                                    return null;
+                                return job.jobDesc.map((str) =>{
+                                    return (
+                                        <>
+                                            {str} <br/>
+                                        </>
+                                    );
                                 })
-                                return text
                             }
                         )()}
                     </p>
