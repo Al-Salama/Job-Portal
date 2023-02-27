@@ -701,7 +701,7 @@ export function Job() {
     }, [courses, experiences, formErrors])
 
     return (
-        <>
+        <div className='JOB'>
             <main>
                 <section className='introduction'>
                     <div className='job-info'>
@@ -1041,6 +1041,6 @@ export function Job() {
 
                 </form>
             </aside>
-        </>
+        </div>
     )
 }

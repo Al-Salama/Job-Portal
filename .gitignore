@@ -2,6 +2,7 @@
 
 # dependencies
 /frontend/main_site/node_modules
+/frontend/admin_site/node_modules
 /.pnp
 .pnp.js
 

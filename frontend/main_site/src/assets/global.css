@@ -18,6 +18,36 @@
     --fc-border-active-color: #1463FF;
 }
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    font-family: 'Cairo', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    background: radial-gradient(circle, #ccd4da 40%, #ffffff 100%);
+    direction: rtl;
+}
+
+.top{
+    display: flex;
+    height: fit-content;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.logo{
+    width: 220px;
+    height: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
 
 input,
 textarea,
