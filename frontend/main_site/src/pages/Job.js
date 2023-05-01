@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './css/Job.css';
-import deliveryIcon from './imgs/delivery.svg';
 import cities from '../data/cities'
 import countries from '../data/countries'
 import useArray from '../hooks/useArray';
 import validateForm from '../utils/validator';
 import formIds from '../data/inputs';
+import addIcon from './imgs/add.png'
+import deleteIcon from './imgs/delete.png'
+const api = "https://career.shubraaltaif.com/api"
+// const api = "http://localhost:3100/api"
 
 function wait(ms) {
     return new Promise(
@@ -44,9 +47,13 @@ function getFormData() {
     return formData;
 }
 
-async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequestStatus) {
+async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequestStatus, job) {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!job || job.isLoading) {
+        return;
+    }
 
     const formErrors = validateForm();
     if (formErrors.length > 0) {
@@ -94,16 +101,17 @@ async function onFormSubmit(e, courses, experience, setFormErrors, setServerRequ
         formData.append("experiences", sendExperienceList);
     }
 
+    formData.append("jobId", job.id);
+
     toggleAllInputs(true);
     setFormErrors([])
     document.querySelector(".loading-spinner-button").style.display = "unset";
     let fetched;
     try {
         console.time("fetch")
-        fetched = await fetch("http://localhost:506/jobs/apply", {
+        fetched = await fetch(`${api}/jobs/apply`, {
             method: "POST",
             body: formData,
-            credentials: "include",
             headers: {
                 'Accept': 'application/json'
             }
@@ -238,15 +246,13 @@ async function deleteItem(event, courses, setCourses) {
     const mainParent = this.parentElement.parentElement.parentElement;
     const courseId = mainParent.dataset.id;
     if (typeof courseId !== "string") return;
-    this.disabled = true;
+    event.srcElement.disabled = true;
     await wait(150);
-    this.disabled = false;
+    event.srcElement.disabled = false;
 
     const newCourses = { isAdding: courses.isAdding, list: courses.list }
     newCourses.list.splice(courseId, 1);
     setCourses(newCourses);
-
-    return true
 }
 
 async function saveCourseItem(event, courses, setCourses, setFormErrors) {
@@ -345,13 +351,13 @@ function getCoursesComponents(courses, formErrorsArray) {
                         </div>
                         <div className='item-info-line'>
                             <b>المرفق: </b>
-                            <p>{course.file.name}</p>
+                            <p>{course.file?.name || "لايوجد"}</p>
                         </div>
                     </div>
 
                     <div className='controls'>
                         <div className='delete-item'>
-                            <button className='delete-item-btn' type='button'></button>
+                            <button className='delete-item-btn' type='button' style={{backgroundImage: `url(${deleteIcon})`}}></button>
                         </div>
                     </div>
                 </div>
@@ -472,7 +478,7 @@ function getExperienceComponents(experiences, formErrorsArray) {
 
                                     <div className='controls'>
                                         <div className='delete-item'>
-                                            <button className='delete-item-btn' type='button'></button>
+                                            <button className='delete-item-btn' type='button' style={{backgroundImage: `url(${deleteIcon})`}}></button>
                                         </div>
                                     </div>
                                 </div>
@@ -519,9 +525,21 @@ function getRateOptions() {
     return options;
 }
 
-const failureMessages = {
+const responseMessages = {
+    "201": {
+        message: "لقد تم إرسال طلبك بنجاح، رقم الطلب هو: {submissionId}.\nسنرسل لك رسالة في الواتس اب في حال قبولك.",
+        className: "alert-green"
+    },
+    "208": {
+        message: "لقد قمت بالفعل بالتقديم على هذه الوظيفة مسبقًا\nورقم تقديمك هو: {submissionId}",
+        className: ""
+    },
     "400": {
         message: "يرجى التأكد من ملئ النموذج بشكلٍ صحيح",
+        className: "alert-orange"
+    },
+    "404": {
+        message: "لايمكنك التقديم على هذه الوظيفة لأنها مغلقة",
         className: "alert-orange"
     },
     "429": {
@@ -537,24 +555,22 @@ const failureMessages = {
         className: ""
     }
 }
-const successMessage = "لقد تم إرسال طلبك بنجاح، رقم الطلب هو: {applicationId}.\nسنرسل لك رسالة تأكيد على رقمك في الواتس أب!"
 
 function getServerRequestStatus(serverRequestStatus) {
     if (typeof serverRequestStatus === "object") {
         let className;
         let message;
-        if (serverRequestStatus.success) {
-            className = "alert-green";
-            message = successMessage.replace("{applicationId}", `${serverRequestStatus.applicationId}`);
+
+        const code = serverRequestStatus.code
+        const failureSettings = responseMessages[code];
+        if (failureSettings) {
+            className = failureSettings.className;
+            if (code === 201) message = failureSettings.message.replace("{submissionId}", serverRequestStatus.submissionId);
+            else if (code === 208) message = failureSettings.message.replace("{submissionId}", serverRequestStatus.submissionId);
+            else message = failureSettings.message;
         } else {
-            const failureSettings = failureMessages[serverRequestStatus.error];
-            if (failureSettings) {
-                className = failureSettings.className;
-                message = failureSettings.message;
-            } else {
-                className = "alert-red";
-                message = "لايمكن تنفيذ طلبك حاليًا، يرجى المحاولة لاحقًا"
-            }
+            className = "alert-red";
+            message = "لايمكن تنفيذ طلبك حاليًا، يرجى المحاولة لاحقًا"
         }
 
         return (
@@ -568,6 +584,257 @@ function getServerRequestStatus(serverRequestStatus) {
     return null;
 }
 
+function getApplyJobBg(job) {
+    return job.isClosed ? null : (
+        <div className='apply-job-bg'>
+            <p>
+                قم بالتقدم للوظيفة
+            </p>
+            <button className='apply-job-btn' onClick={(() => {
+                document.querySelector(".application-section").scrollIntoView({behavior: "smooth", block: "start"})
+            })}>
+                تقدم للوظيفة
+            </button>
+        </div>
+    )
+}
+
+function getApplicationSection(job, args) {
+    return job.isClosed ? null : (
+        <aside className='application-section'>
+            <form id="form" method="POST" encType="multipart/form-data" style={{ direction: "rtl" }}>
+                <section className='form-section'>
+                    <h3>
+                        البيانات الشخصية
+                    </h3>
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="name">الإسم</label>
+                            {getErrorForm("name", args.formErrors.array)}
+                        </div>
+                        <input type="text" name="name" id="name" placeholder="الإسم الرباعي" />
+                    </div>
+
+                    <div className="form-block">
+                        <div className='tooltip-container' >
+                            <p id='sex'>الجنس</p>
+                            {getErrorForm("sex", args.formErrors.array)}
+                        </div>
+
+                        <div className='radio-choice'>
+                            <input type="radio" name="sex" id="male" value={'ذكر'} />
+                            <label htmlFor="male">ذكر</label>
+                        </div>
+
+                        <div className='radio-choice'>
+                            <input type="radio" name="sex" id="female" value={'أنثى'} />
+                            <label htmlFor="female">أنثى</label>
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="id-number">رقم الهوية/الإقامة</label>
+
+                        <div className='tooltip-container'>
+                            <input type="number" name="idNumber" id="id-number"/>
+                            {getErrorForm("id-number", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                            <label htmlFor="birthDate">تاريخ الميلاد</label>
+                        <div className='tooltip-container'>
+                            <input type="date" name="birthDate" id="birthDate" />
+                            {getErrorForm("birthDate", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="marital-status">الحالة الإجتماعية</label>
+                        <div className='tooltip-container'>
+                            <select name="maritalStatus" id="marital-status" defaultValue={"default"}>
+                                <option value="default" disabled>يرجى الإختيار</option>
+                                {getMaritalStatus()}
+                            </select>
+                            {getErrorForm("marital-status", args.formErrors.array, "tooltip-below")}
+                        </div>
+                        {getMaritalComponent(args.selectedMarital, args.formErrors.array)}
+                    </div>
+
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="nationality">الجنسية</label>
+                            {getErrorForm("nationality", args.formErrors.array)}
+                        </div>
+                        <select name="nationality" id="nationality" defaultValue={"default"}>
+                            <option value="default" disabled>يرجى الإختيار</option>
+                            {getCountries()}
+                        </select>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="phone">رقم الجوال</label>
+                        <div className='tooltip-container'>
+                            <input type="tel" name="phone" id="phone" placeholder='مثال: 05xxxxxxxx' />
+                            {getErrorForm("phone", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="city">المدينة</label>
+                            {getErrorForm("city", args.formErrors.array)}
+                        </div>
+                        <select name="city" id="city" defaultValue={"default"}>
+                            <option value="default" disabled>يرجى الإختيار</option>
+                            {getCities()}
+                        </select>
+                    </div>
+
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="address">العنوان</label>
+                            {getErrorForm("address", args.formErrors.array)}
+                        </div>
+                        <input type="text" name="address" id="address" placeholder="العنوان" />
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="email">البريد الإلكتروني</label>
+                        <div className='tooltip-container'>
+                            <input type="email" name="email" id="email" placeholder="example@shubra.com" />
+                            {getErrorForm("email", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="cv">السيرة الذاتية</label>
+                        <div className='tooltip-container'>
+                            <input type="file" name="cv" id="cv" placeholder="أدخل سيرتك الذاتية" accept='.png, .jpeg, .jpg, .pdf' />
+                            {getErrorForm("cv", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+                </section>
+
+                <section className='form-section'>
+                    <h3>المؤهل العلمي</h3>
+
+                    <div className="form-block">
+                        <label htmlFor="degree">الشهادة الحاصل عليها</label>
+                        <div className='tooltip-container'>
+                            <select name="degree" id="degree" defaultValue={"default"}>
+                                <option value="default" disabled>يرجى الإختيار</option>
+                                {getDegrees()}
+                            </select>
+                            {getErrorForm("degree", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+                    {getDegreeComponent(args.selectedDegree, args.formErrors.array)}
+
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="graduate-date">سنة التخرج</label>
+                            {getErrorForm("graduate-date", args.formErrors.array)}
+                        </div>
+                        <input type="number" name="graduateDate" id="graduate-date" step="1" placeholder="سنة التخرج" />
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="certificate">صورة الشهادة</label>
+                        <div className='tooltip-container'>
+                            <input type="file" name="certificate" id="certificate" placeholder="رفع ملف أو صورة الشهادة" accept='.png, .jpeg, .jpg, .pdf' />
+                            {getErrorForm("certificate", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+                </section>
+
+                <section className='form-section'>
+                    <div>
+                        <h3>الدورات التدريبية</h3>
+                        <span className='add-item'>
+                            <button className='add-item-btn' type='button' onClick={
+                                function (e) {
+                                    addItem.call(this, e, args.courses, args.setCourses)
+                                }
+                            } style={{backgroundImage: `url(${addIcon})`}}></button>
+                        </span>
+                    </div>
+
+                    <div className="form-block course-inputs">
+                        {getCoursesComponents(args.courses, args.formErrors.array)}
+                    </div>
+                </section>
+
+                <section className='form-section'>
+                    <div>
+                        <h3>الخبرة السابقة</h3>
+                        <span className='add-item'>
+                            <button className='add-item-btn' type='button' onClick={
+                                function (e) {
+                                    addItem.call(this, e, args.experiences, args.setExperiences)
+                                }
+                            } style={{backgroundImage: `url(${addIcon})`}}></button>
+                        </span>
+                    </div>
+                    {getExperienceComponents(args.experiences, args.formErrors.array)}
+                </section>
+
+                <section className='form-section'>
+                    <h3>بتقييم من 0 إلى 10 حيث أن 10 تعني ممتاز جدًا و 0 تعني سيء جدًا</h3>
+
+                    <div className="form-block">
+                        <label htmlFor="computer-rate">كم تقيم نفسك في إستعمال الحاسب الآلي</label>
+                        <div className='tooltip-container'>
+                            <select name="computerRate" id="computer-rate" defaultValue={"default"}>
+                                <option value="default" disabled>يرجى الإختيار</option>
+                                {getRateOptions()}
+                            </select>
+                            {getErrorForm("computer-rate", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="english-rate">كم تقيم نفسك في اللغة الإنجليزية</label>
+                        <div className='tooltip-container'>
+                            <select name="englishRate" id="english-rate" defaultValue={"default"}>
+                                <option value="default" disabled>يرجى الإختيار</option>
+                                {getRateOptions()}
+                            </select>
+                            {getErrorForm("english-rate", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <label htmlFor="flexibility-rate">كم تقيم نفسك في المرونة في العمل</label>
+                        <div className='tooltip-container'>
+                            <select name="flexibilityRate" id="flexibility-rate" defaultValue={"default"}>
+                                <option value="default" disabled>يرجى الإختيار</option>
+                                {getRateOptions()}
+                            </select>
+                            {getErrorForm("flexibility-rate", args.formErrors.array, "tooltip-below")}
+                        </div>
+                    </div>
+
+                    <div className="form-block">
+                        <div className='tooltip-container'>
+                            <label htmlFor="self-talk">تكلم عن نفسك</label>
+                            {getErrorForm("self-talk", args.formErrors.array)}
+                        </div>
+                        <textarea name='selfTalk' id='self-talk'></textarea>
+                    </div>
+                </section>
+
+                <div className="form-block">
+                    {getSubmitButton(job)}
+
+                    {getServerRequestStatus(args.serverRequestStatus)}
+                </div>
+
+            </form>
+        </aside>
+    )
+}
+
 export function Job() {
     const [selectedMarital, setSelectedMarital] = useState(false);
     const [selectedDegree, setSelectedDegree] = useState(false);
@@ -575,32 +842,59 @@ export function Job() {
     const [experiences, setExperiences] = useState({ isAdding: false, list: [] });
     const formErrors = useArray([]);
     const [serverRequestStatus, setServerRequestStatus] = useState(false);
-
+    const hasFetched = useRef(false)
+    const [job, setJob] = useState(false);
+    if (!job) {
+        setJob({
+            id: 0,
+            title: "Loading ...",
+            description: "Loading ...",
+            icon: "Loading ...",
+            responsibilities: "Loading ...",
+            qualifications: "Loading ...",
+            isClosed: true,
+            isLoading: true
+        })
+    }
 
     useEffect(() => {
-        function onDegreeChange() {
-            setSelectedDegree(this.selectedIndex)
-        };
+        if (!hasFetched.current) {
+            const params = new Proxy(new URLSearchParams(window.location.search), {
+                get: (searchParams, prop) => searchParams.get(prop),
+            });
+            if (typeof params.id !== "string") {
+                window.location.replace("/")
+                return;
+            };
 
-        const degree = document.getElementById("degree")
-        degree.addEventListener("change", onDegreeChange)
-
-
-        function onMaritalStatusChange() {
-            setSelectedMarital(this.selectedIndex);
-        };
-        const maritalStatus = document.getElementById("marital-status")
-        maritalStatus.addEventListener("change", onMaritalStatusChange)
-
-
-        const spinner = document.querySelector(".loading-spinner-button");
-        spinner.style.display = "none";
-
-        return () => {
-            degree.removeEventListener("change", onDegreeChange)
-            maritalStatus.removeEventListener("change", onMaritalStatusChange)
+            fetchJobDetails(params.id, setJob)
+            hasFetched.current = true;
         }
-    }, [])
+
+        if (!job.isClosed) {
+            function onDegreeChange() {
+                setSelectedDegree(this.selectedIndex)
+            };
+
+            const degree = document.getElementById("degree")
+            degree.addEventListener("change", onDegreeChange)
+
+
+            function onMaritalStatusChange() {
+                setSelectedMarital(this.selectedIndex);
+            };
+            const maritalStatus = document.getElementById("marital-status")
+            maritalStatus.addEventListener("change", onMaritalStatusChange)
+
+
+            const spinner = document.querySelector(".loading-spinner-button");
+            spinner.style.display = "none";
+            return () => {
+                degree.removeEventListener("change", onDegreeChange)
+                maritalStatus.removeEventListener("change", onMaritalStatusChange)
+            }
+        }
+    }, [job])
 
     useEffect(() => {
         if (courses.isAdding) {
@@ -615,22 +909,24 @@ export function Job() {
                 cancelCourseButton.removeEventListener("click", doCancelCourse)
             }
         } else {
-            const deleteButtons = document.querySelectorAll(".course-item .delete-item-btn");
-            function doDeleteCourse(e) {
-                deleteItem.call(this, e, courses, setCourses);
-            }
+            if (!job.isClosed) {
+                const deleteButtons = document.querySelectorAll(".course-item .delete-item-btn");
+                function doDeleteCourse(e) {
+                    deleteItem.call(this, e, courses, setCourses);
+                }
 
-            for (const button of deleteButtons) {
-                button.addEventListener("click", doDeleteCourse)
-            }
-
-            return () => {
                 for (const button of deleteButtons) {
-                    button.removeEventListener("click", doDeleteCourse)
+                    button.addEventListener("click", doDeleteCourse)
+                }
+
+                return () => {
+                    for (const button of deleteButtons) {
+                        button.removeEventListener("click", doDeleteCourse)
+                    }
                 }
             }
         }
-    }, [courses])
+    }, [courses, job])
 
     useEffect(() => {
         if (experiences.isAdding) {
@@ -645,60 +941,66 @@ export function Job() {
                 cancelExperienceButton.removeEventListener("click", doCancelExperience)
             }
         } else {
-            const deleteButtons = document.querySelectorAll(".experience-item .delete-item-btn");
-            function doDeleteExperience(e) {
-                deleteItem.call(this, e, experiences, setExperiences);
-            }
+            if (!job.isClosed){
+                const deleteButtons = document.querySelectorAll(".experience-item .delete-item-btn");
+                function doDeleteExperience(e) {
+                    deleteItem.call(this, e, experiences, setExperiences);
+                }
 
-            for (const button of deleteButtons) {
-                button.addEventListener("click", doDeleteExperience)
-            }
-
-            return () => {
                 for (const button of deleteButtons) {
-                    button.removeEventListener("click", doDeleteExperience)
+                    button.addEventListener("click", doDeleteExperience)
+                }
+
+                return () => {
+                    for (const button of deleteButtons) {
+                        button.removeEventListener("click", doDeleteExperience)
+                    }
                 }
             }
         }
-    }, [experiences])
+    }, [experiences, job])
 
     useEffect(() => {
-        function doFormSubmit(e) {
-            onFormSubmit.call(this, e, courses, experiences, formErrors.set, setServerRequestStatus)
-        };
-        const form = document.getElementById("form")
-        form.addEventListener("submit", doFormSubmit);
+        if (!job.isClosed) {
+            function doFormSubmit(e) {
+                onFormSubmit.call(this, e, courses, experiences, formErrors.set, setServerRequestStatus, job)
+            };
+            const form = document.getElementById("form")
+            form.addEventListener("submit", doFormSubmit);
 
-        const saveCourseButton = document.querySelector(".course-save-btn");
-        let doSaveCourse;
-        if (courses.isAdding) {
-            doSaveCourse = function(e) {
-                saveCourseItem.call(this, e, courses, setCourses, formErrors.set)
-            }
-            saveCourseButton.addEventListener("click", doSaveCourse)
-        }
-
-        const saveExperienceButton = document.querySelector(".experience-save-btn");
-        let doSaveExperience;
-        if (experiences.isAdding) {
-            doSaveExperience = function(e) {
-                saveExperienceItem.call(this, e, experiences, setExperiences, formErrors.set)
-            }
-            saveExperienceButton.addEventListener("click", doSaveExperience)
-        }
-
-        return () => {
-            form.removeEventListener("submit", doFormSubmit)
-
+            let saveCourseButton;
+            let doSaveCourse;
             if (courses.isAdding) {
-                saveCourseButton.removeEventListener("click", doSaveCourse)
+                saveCourseButton = document.querySelector(".course-save-btn");
+                doSaveCourse = function(e) {
+                    saveCourseItem.call(this, e, courses, setCourses, formErrors.set)
+                }
+                saveCourseButton.addEventListener("click", doSaveCourse)
             }
 
+            let saveExperienceButton;
+            let doSaveExperience;
             if (experiences.isAdding) {
-                saveExperienceButton.removeEventListener("click", doSaveExperience)
+                saveExperienceButton = document.querySelector(".experience-save-btn");
+                doSaveExperience = function(e) {
+                    saveExperienceItem.call(this, e, experiences, setExperiences, formErrors.set)
+                }
+                saveExperienceButton.addEventListener("click", doSaveExperience)
+            }
+
+            return () => {
+                form.removeEventListener("submit", doFormSubmit)
+
+                if (courses.isAdding) {
+                    saveCourseButton.removeEventListener("click", doSaveCourse)
+                }
+
+                if (experiences.isAdding) {
+                    saveExperienceButton.removeEventListener("click", doSaveExperience)
+                }
             }
         }
-    }, [courses, experiences, formErrors])
+    }, [courses, experiences, formErrors, job])
 
     return (
         <div className='JOB'>
@@ -706,341 +1008,85 @@ export function Job() {
                 <section className='introduction'>
                     <div className='job-info'>
                         <div className='job-info-top'>
-                            <img src={deliveryIcon} alt='أيقونة الوظيفة' />
+                            <img src={job.icon} alt='أيقونة الوظيفة' />
                             <h1>
-                                موصل بضائع
+                                {job.title}
                             </h1>
                         </div>
                         <div className='job-info-middle'>
                             <p>
-                                يستلم مندوب التوصيل السلع والطلبات من المنشأة كما يحصل على توجيهات مكان التوصيل وملاحظات العميل، ثم ينطلق ليوصلها إلى من طلبها
+                                {job.description}
                             </p>
                         </div>
 
                         <div className='job-info-bottom'>
                             <p className='job-status'>
-                                حالة الوظيفة: <span className='job-status-closed'>مغلق</span>
-                            </p>
-                            <p className='job-status'>
-                                حالة الوظيفة: <span className='job-status-opened'>مفتوح</span>
+                                حالة الوظيفة: <span className={`job-status-${(job.isClosed && "closed") || "opened"}`}>{(job.isClosed && "مغلق") || "مفتوح"}</span>
                             </p>
                         </div>
                     </div>
 
-                    <div className='apply-job-bg'>
-                        <p>
-                            قم بالتقدم للوظيفة
-                        </p>
-                        <button className='apply-job-btn'>
-                            تقدم للوظيفة
-                        </button>
-                    </div>
+                    {getApplyJobBg(job)}
                 </section>
 
                 <section className='job-details'>
                     <ol className='details-list'>
                         <li>
                             <h3>المهام والمسؤوليات</h3>
-                            <p>
-                                • اتخاذ القرارات بخصوص إدارة المدن، والقرى، والبلدات،  والأرياف
-                                <br />
-                                • العمل من أجل تحقيق التوازن في الأحياء السكنية وتحسين المستوى المعيشي عن طريق إجراء التحديثات والتطويرات المناسبة•
-                                <br />
-                                • تحليل البيانات
-                                <br />
-                                • تطوير الوعي البيئي
-                                <br />
-                                • تصميم المخططات والخرائط
-                                <br />
-                                • إيجاد حلول وخطط إبداعية تصلح لجميع أجزاء المدن
-                                <br />
-                                • التشاور والتفاوض مع الجهات والأشخاص المعنية، وقد يكون بعضهم من أرباب الحصص والمطورين الآخرين مثل المسَّاحين ومهندس العمارة
-                                <br />
-                                • تقييم تطبيق الخطط وتنفيذها والإشراف على النتائج
-                                <br />
-                                • الإلمام بالقوانين المتعلقة باستخدام الأراضي والإطلاع عليها من حين لآخر
-                                <br />
-                                • عندما يبدأ المشروع، يبدأ مخططي المدن في العمل مع المسؤولين الحكوميين، وأعضاء مجتمع معتمدين على البحث العلمي، واستراتيجيات تحليل البيانات
-                                <br />
-                                • تقديم وعرض المشاريع للجهات المعنية
-                                <br />
-                                • القيام بالزيارات الميدانية للمدن وتفحصها
-                                <br />
-                                • مراجعة مخططات المواقع التي أعدها المطورين
-                                <br />
-                                • الاجتماع مع موظفي الحكومة والجهات المعنية والمطورين لمناقشة مشاريع التخطيط الحضري
-                                <br />
-                                • تعديل المخططات وإجراء بعض الاقتراحات عليها جمع وتحليل البيانات الاقتصادية والبيئية وإجراء الدراسات على سوق العمل
-                            </p>
+                            <pre>
+                               {job.responsibilities}
+                            </pre>
                         </li>
 
                         <li>
                             <h3>المهارات والمؤهلات</h3>
-                            <p>
-                                يُعد معظم مخططي المدن البارزين من حملة شهادة الماجستير، لكن هذا لا يعني عدم إمكانية العمل في المجال بشهادة البكالوريوس بل يعني الحاجة الملحة إلى اكتساب خبرة عمل واسعة خاصةً في التخطيط، والسياسة العامة، أو أي حقل علمي ذات صلة. فكل ما عليك هو أنْ تُحضِّر نفسك جيدًا، بادر باكتساب معرفة جيدة في بعض المجالات الهامة ذات الصلة مثل:
-                                <br />
-                                • الإدارة العامة
-                                <br />
-                                • الهندسة المعمارية
-                                <br />
-                                • هندسة المناظر الطبيعية
-                                <br />
-                                أما بالنسبة للدراسات العليا، يُمكن لحاملي شهادة البكالوريوس في تخصص الجغرافيا، أو الاقتصاد، أو العلوم السياسية، وعلم البيئة، أو هندسة العمارة.
-                            </p>
+                            <pre>
+                               {job.qualifications}
+                            </pre>
                         </li>
                     </ol>
                 </section>
             </main>
 
-            <aside className='application-section'>
-                <form id="form" action="https://api.alsalamah506.sa/jobs/apply" method="POST" encType="multipart/form-data" style={{ direction: "rtl" }}>
-
-
-                    <section className='form-section'>
-                        <h3>
-                            البيانات الشخصية
-                        </h3>
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="name">الإسم</label>
-                                {getErrorForm("name", formErrors.array)}
-                            </div>
-                            <input type="text" name="name" id="name" placeholder="الإسم الرباعي" />
-                        </div>
-
-                        <div className="form-block">
-
-                            <div className='tooltip-container' >
-                                <p id='sex'>الجنس</p>
-                                {getErrorForm("sex", formErrors.array)}
-                            </div>
-
-
-                            <div className='radio-choice'>
-                                <input type="radio" name="sex" id="male" value={'ذكر'} />
-                                <label htmlFor="male">ذكر</label>
-                            </div>
-
-                            <div className='radio-choice'>
-                                <input type="radio" name="sex" id="female" value={'أنثى'} />
-                                <label htmlFor="female">أنثى</label>
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="id-number">رقم الهوية/الإقامة</label>
-
-                            <div className='tooltip-container'>
-                                <input type="number" name="idNumber" id="id-number"/>
-                                {getErrorForm("id-number", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                                <label htmlFor="birthDate">تاريخ الميلاد</label>
-                            <div className='tooltip-container'>
-                                <input type="date" name="birthDate" id="birthDate" />
-                                {getErrorForm("birthDate", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="marital-status">الحالة الإجتماعية</label>
-                            <div className='tooltip-container'>
-                                <select name="maritalStatus" id="marital-status" defaultValue={"default"}>
-                                    <option value="default" disabled>يرجى الإختيار</option>
-                                    {getMaritalStatus()}
-                                </select>
-                                {getErrorForm("marital-status", formErrors.array, "tooltip-below")}
-                            </div>
-
-                            {getMaritalComponent(selectedMarital, formErrors.array)}
-                        </div>
-
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="nationality">الجنسية</label>
-                                {getErrorForm("nationality", formErrors.array)}
-                            </div>
-                            <select name="nationality" id="nationality" defaultValue={"default"}>
-                                <option value="default" disabled>يرجى الإختيار</option>
-                                {getCountries()}
-                            </select>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="phone">رقم الجوال</label>
-                            <div className='tooltip-container'>
-                                <input type="tel" name="phone" id="phone" placeholder='مثال: 05xxxxxxxx' />
-                                {getErrorForm("phone", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="city">المدينة</label>
-                                {getErrorForm("city", formErrors.array)}
-                            </div>
-                            <select name="city" id="city" defaultValue={"default"}>
-                                <option value="default" disabled>يرجى الإختيار</option>
-                                {getCities()}
-                            </select>
-                        </div>
-
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="address">العنوان</label>
-                                {getErrorForm("address", formErrors.array)}
-                            </div>
-                            <input type="text" name="address" id="address" placeholder="العنوان" />
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="email">البريد الإلكتروني</label>
-                            <div className='tooltip-container'>
-                                <input type="email" name="email" id="email" placeholder="example@shubra.com" />
-                                {getErrorForm("email", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="cv">السيرة الذاتية</label>
-                            <div className='tooltip-container'>
-                                <input type="file" name="cv" id="cv" placeholder="أدخل سيرتك الذاتية" accept='.png, .jpeg, .jpg, .pdf' />
-                                {getErrorForm("cv", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className='form-section'>
-                        <h3>المؤهل العلمي</h3>
-
-                        <div className="form-block">
-                            <label htmlFor="degree">الشهادة الحاصل عليها</label>
-                            <div className='tooltip-container'>
-                                <select name="degree" id="degree" defaultValue={"default"}>
-                                    <option value="default" disabled>يرجى الإختيار</option>
-                                    {getDegrees()}
-                                </select>
-                                {getErrorForm("degree", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        {getDegreeComponent(selectedDegree, formErrors.array)}
-
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="graduate-date">سنة التخرج</label>
-                                {getErrorForm("graduate-date", formErrors.array)}
-                            </div>
-                            <input type="number" name="graduateDate" id="graduate-date" min="1900" max="2099" step="1" placeholder="سنة التخرج" />
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="certificate">صورة الشهادة</label>
-                            <div className='tooltip-container'>
-                                <input type="file" name="certificate" id="certificate" placeholder="رفع ملف أو صورة الشهادة" accept='.png, .jpeg, .jpg, .pdf' />
-                                {getErrorForm("certificate", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                    </section>
-
-                    <section className='form-section'>
-                        <div>
-                            <h3>الدورات التدريبية</h3>
-                            <span className='add-item'>
-                                <button className='add-item-btn' type='button' onClick={
-                                    function (e) {
-                                        addItem.call(this, e, courses, setCourses)
-                                    }
-                                }></button>
-                            </span>
-                        </div>
-
-                        <div className="form-block course-inputs">
-                            {getCoursesComponents(courses, formErrors.array)}
-                        </div>
-                    </section>
-
-                    <section className='form-section'>
-                        <div>
-                            <h3>الخبرة السابقة</h3>
-                            <span className='add-item'>
-                                <button className='add-item-btn' type='button' onClick={
-                                    function (e) {
-                                        addItem.call(this, e, experiences, setExperiences)
-                                    }
-                                }></button>
-                            </span>
-                        </div>
-
-                        {getExperienceComponents(experiences, formErrors.array)}
-                    </section>
-
-                    <section className='form-section'>
-                        <h3>بتقييم من 0 إلى 10 حيث أن 10 تعني ممتاز جدًا و 0 تعني سيء جدًا</h3>
-
-                        <div className="form-block">
-                            <label htmlFor="computer-rate">كم تقيم نفسك في إستعمال الحاسب الآلي</label>
-                            <div className='tooltip-container'>
-                                <select name="computerRate" id="computer-rate" defaultValue={"default"}>
-                                    <option value="default" disabled>يرجى الإختيار</option>
-                                    {getRateOptions()}
-                                </select>
-                                {getErrorForm("computer-rate", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="english-rate">كم تقيم نفسك في اللغة الإنجليزية</label>
-                            <div className='tooltip-container'>
-                                <select name="englishRate" id="english-rate" defaultValue={"default"}>
-                                    <option value="default" disabled>يرجى الإختيار</option>
-                                    {getRateOptions()}
-                                </select>
-                                {getErrorForm("english-rate", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <label htmlFor="flexibility-rate">كم تقيم نفسك في المرونة في العمل</label>
-                            <div className='tooltip-container'>
-                                <select name="flexibilityRate" id="flexibility-rate" defaultValue={"default"}>
-                                    <option value="default" disabled>يرجى الإختيار</option>
-                                    {getRateOptions()}
-                                </select>
-                                {getErrorForm("flexibility-rate", formErrors.array, "tooltip-below")}
-                            </div>
-                        </div>
-
-                        <div className="form-block">
-                            <div className='tooltip-container'>
-                                <label htmlFor="self-talk">تكلم عن نفسك</label>
-                                {getErrorForm("self-talk", formErrors.array)}
-                            </div>
-                            <textarea name='selfTalk' id='self-talk'></textarea>
-                        </div>
-                    </section>
-
-                    <div className="form-block">
-                        <p className='uploading-progress'>
-                            تقدم التحميل: 0%
-                        </p>
-                    </div>
-
-
-                    <div className="form-block">
-                        <button id='submitBtn' className='form-button' type="submit">
-                            <span>تقديم</span>
-                            <span className="loading-spinner-button" role="status" aria-hidden="true"></span>
-                        </button>
-
-                        {getServerRequestStatus(serverRequestStatus)}
-                    </div>
-
-                </form>
-            </aside>
+            {getApplicationSection(job, {selectedMarital, selectedDegree, courses, setCourses, experiences, setExperiences, formErrors, serverRequestStatus})}
         </div>
     )
+}
+
+function getSubmitButton(job) {
+    if (!job || job.isLoading) {
+        return (
+            <button id='submitBtn' className='form-button' type="submit" disabled>
+                <span>تقديم</span>
+                <span className="loading-spinner-button" role="status" aria-hidden="true"></span>
+            </button>
+        )
+    } else {
+        return (
+            <button id='submitBtn' className='form-button' type="submit">
+                <span>تقديم</span>
+                <span className="loading-spinner-button" role="status" aria-hidden="true"></span>
+            </button>
+        )
+    }
+}
+
+async function fetchJobDetails(id, setJob) {
+    let fetchResult;
+    try {
+        fetchResult = await fetch(`${api}/jobs/${id}`, {
+            method: "GET"
+        })
+    } catch (error) {
+        console.error(error)
+        window.location.replace("/");
+        return;
+    } finally{
+        if (fetchResult && fetchResult.ok) {
+            const jsonRes = await fetchResult.json();
+            setJob(jsonRes.job);
+        } else {
+            window.location.replace("/");
+        }
+    }
 }

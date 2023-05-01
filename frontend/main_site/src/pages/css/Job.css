@@ -2,7 +2,7 @@
     --color: #2886b1;
 }
 
-.JOB p {
+.JOB p, .JOB pre {
     margin-bottom: 1rem;
 }
 
@@ -18,8 +18,15 @@
     font-weight: 600;
 }
 
+.JOB{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .JOB main {
-    margin: 80px 10px 0 10px;
+    width: calc(100% - 20px);
+    margin: 80px 0 0 0;
     padding: 20px 15px;
     direction: rtl;
 
@@ -29,14 +36,14 @@
     align-items: center;
 
     background-color: white;
-    border: 2px solid #bfc6cc;
-    border-top: none;
     border-radius: 18px;
     box-shadow: 0px 4px 32px rgb(0 0 0 / 10%);
 }
 
 .JOB main .introduction {
     margin-bottom: 40px;
+    width: 100%;
+    max-width: 550px;
 }
 
 .JOB .job-info {
@@ -51,7 +58,7 @@
     color: #4e4e4e;
     align-items: center;
     justify-content: stretch;
-    gap: 10vw;
+    gap: 25px;
 }
 
 .JOB .job-info .job-info-top h1{
@@ -142,14 +149,18 @@
     transition: width 200ms ease-in-out;
 }
 
-.JOB .apply-job-bg .apply-job-btn:hover,
-.JOB .apply-job-bg .apply-job-btn:focus {
+.JOB .apply-job-bg .apply-job-btn:active {
     color: #fff;
     outline: 0;
 }
 
-.JOB .apply-job-bg .apply-job-btn:hover::after {
+.JOB .apply-job-bg .apply-job-btn:active::after {
     width: 110%;
+}
+
+.JOB .job-details{
+    width: 100%;
+    max-width: 1000px;
 }
 
 .JOB .details-list li {
@@ -161,6 +172,7 @@
     box-shadow: 0px 4px 7px rgb(0 0 0 / 12%);
     border-radius: 7px;
     margin: 0 0 30px 0;
+    width: 100%;
 }
 
 .JOB .details-list li::marker {
@@ -173,6 +185,17 @@
     font-weight: 600;
     margin-bottom: 20px;
     color: black;
+}
+
+.JOB .details-list li pre{
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+
+    word-wrap: break-word;
+    white-space: -moz-pre-wrap;
+    white-space: pre-wrap;
 }
 
 .JOB .details-list li *:not(h3) {
@@ -192,7 +215,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin: 80px 10px 100px 10px;
+    margin: 80px 0 100px 0;
+    width: calc(100% - 20px);
     padding: 30px 20px;
     font-size: 0.9em;
     font-weight: 500;
@@ -258,14 +282,14 @@
     justify-content: center;
     align-items: center;
 }
-.JOB .application-section div > .add-item:has(.add-item-btn:hover) {
-    background-color: #d6d6d675;
 
+.JOB .application-section div > .add-item:has(.add-item-btn:active) {
+    background-color: #d6d6d675;
 }
 
 .JOB .application-section div > .add-item > .add-item-btn{
     background-color: transparent;
-    background-image: url(../imgs/add.png);
+    /* background-image: url(../imgs/add.png); */
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -315,23 +339,23 @@
     padding-bottom: 15px;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB p{
+:is(.JOB .course-item, .JOB .experience-item) p{
     display: inline-block;
     margin: 0;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB .item-info{
+:is(.JOB .course-item, .JOB .experience-item) .item-info{
     margin-right: 8px;
     margin-bottom: 8px;
     padding-left: 10px;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB .controls{
+:is(.JOB .course-item, .JOB .experience-item) .controls{
     border-right: 1px solid black;
     padding-right: 5px;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB .delete-item{
+:is(.JOB .course-item, .JOB .experience-item) .delete-item{
     background: transparent;
     border-radius: 50%;
     width: 40px;
@@ -341,17 +365,13 @@
     align-items: center;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB .delete-item:has(.delete-item-btn:hover){
-    background-color: #ff9f9f75;
-}
-
-:is(.JOB .course-item, .JOB .experience-item) .JOB .delete-item:has(.delete-item-btn:active){
+:is(.JOB .course-item, .JOB .experience-item) .delete-item:has(.delete-item-btn:active){
     background-color: #ff9f9f96;
 }
 
-:is(.JOB .course-item, .JOB .experience-item) .JOB .delete-item .delete-item-btn{
+:is(.JOB .course-item, .JOB .experience-item) .delete-item .delete-item-btn{
     background-color: transparent;
-    background-image: url(../imgs/delete.png);
+    /* background-image: url(../imgs/delete.png); */
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -413,6 +433,25 @@
 }
 
 /*=====  End of Fields  ======*/
+
+@media (hover: hover){
+    .JOB .apply-job-bg .apply-job-btn:hover {
+        color: #fff;
+        outline: 0;
+    }
+
+    .JOB .apply-job-bg .apply-job-btn:hover::after {
+        width: 110%;
+    }
+
+    .JOB .application-section div > .add-item:has(.add-item-btn:hover) {
+        background-color: #d6d6d675;
+    }
+
+    :is(.JOB .course-item, .JOB .experience-item) .delete-item:has(.delete-item-btn:hover){
+        background-color: #ff9f9f75;
+    }
+}
 
 @media (width >= 400px){
     .JOB .application-section{

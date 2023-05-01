@@ -130,7 +130,7 @@ function noSpecialCharacters(string) {
 
 function noHardSpecialCharacters(string) {
     return {
-        isValid: /^[a-zA-Z0-9.,،\-\u0621-\u064A\u0660-\u0669 ]+$/gu.test(string),
+        isValid: /^[a-zA-Z0-9.,،\-\u0618-\u061A\u0621-\u0655\u0660-\u0669 ]+$/gu.test(string),
         reason: "يسمح فقط بهذه الرموز: [. , ، -]"
     }
 }
@@ -172,10 +172,11 @@ function idNumber(string) {
 
 function correctName(string) {
     return {
-        isValid:
+        /* isValid:
         /^[a-zA-Z\u0621-\u064A\u0660-\u0669]{3,} [a-zA-Z\u0621-\u064A\u0660-\u0669]{3,} [a-zA-Z\u0621-\u064A\u0660-\u0669]{3,} [a-zA-Z\u0621-\u064A\u0660-\u0669]{3,}$/gu
-        .test(string),
+        .test(string), */
 
+        isValid: string.match(/[a-zA-Z\u0621-\u064A\u0660-\u0669]{3,}/g).length >= 4,
         reason: "يرجى إدخال الإسم الرباعي"
     }
 }

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
 :root{
     /* NORMAL */
     --fc-border-color: #ECEFF9;
@@ -17,6 +19,30 @@
 
     --fc-border-active-color: #1463FF;
 }
+
+footer{
+    padding: 40px 30px;
+    background-color: white;
+    box-shadow: 0px 0 8px rgb(0 0 0 / 10%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+
+footer a{
+    color: #383d41;
+    font-size: 35px;
+}
+
+footer .links{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
 
 * {
     box-sizing: border-box;

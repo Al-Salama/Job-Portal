@@ -1,67 +1,29 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import useArray from '../hooks/useArray';
 import './css/Home.css';
-import cashierIcon from './imgs/cashier.svg';
-import deliveryIcon from './imgs/delivery.svg';
-
-const jobs = [
-    {
-        jobTitle: 'موصل بضائع',
-        jobDesc: 'يستلم مندوب التوصيل السلع والطلبات من المنشأة كما يحصل على توجيهات مكان التوصيل وملاحظات العميل، ثم ينطلق ليوصلها إلى من طلبها.\nكلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود كلام يتجاوز الحدود',
-        icon: deliveryIcon
-    },
-    {
-        jobTitle: 'كاشير',
-        jobDesc: 'يقوم الكاشير بإدارة صندوق المصروفات ومحاسبة العملاء.',
-        icon: cashierIcon
-    },
-    {
-        jobTitle: 'موصل بضائع',
-        jobDesc: 'يستلم مندوب التوصيل السلع والطلبات من المنشأة كما يحصل على توجيهات مكان التوصيل وملاحظات العميل، ثم ينطلق ليوصلها إلى من طلبها.',
-        icon: deliveryIcon
-    },
-    {
-        jobTitle: 'كاشير',
-        jobDesc: 'يقوم الكاشير بإدارة صندوق المصروفات ومحاسبة العملاء.',
-        icon: cashierIcon
-    },
-    {
-        jobTitle: 'موصل بضائع',
-        jobDesc: 'يستلم مندوب التوصيل السلع والطلبات من المنشأة كما يحصل على توجيهات مكان التوصيل وملاحظات العميل، ثم ينطلق ليوصلها إلى من طلبها.',
-        icon: deliveryIcon
-    }
-]
-
-function getJobs() {
-    const html_jobs = [];
-    jobs.map((job) => {
-        html_jobs.push(
-            <li className="job-item">
-                <a href="/job">
-                    <div className="icon-container">
-                        <img className="icon" src={job.icon} alt="أيقونة الوظيفة" />
-                    </div>
-                    <h3 className="job-title">
-                        {job.jobTitle}
-                    </h3>
-                    <pre className="job-desc">
-                        {job.jobDesc}
-                    </pre>
-                </a>
-            </li>
-        )
-        return null;
-    })
-    return html_jobs
-}
+import bannerImage from "./imgs/banner.jpg"
+const api = "https://career.shubraaltaif.com/api"
+// const api = "http://localhost:3100/api"
 
 export function Home() {
+    const jobs = useArray([]);
+
+    const fetched = useRef(false);
+    useEffect(() => {
+        if (fetched.current) return;
+        fetched.current = true;
+
+        fetchJobs(jobs.set);
+        // eslint-disable-next-line
+    }, [])
+
     return (
         <>
             <main className='HOME'>
                 <h1 className="page-title">
                     بوابة التوظيف - شركة شبرا الطائف التجارية
                 </h1>
-                <section className="banner">
+                <section className="banner" style={{backgroundImage: `url(${bannerImage})`}}>
                     <h2>
                         إعمل معنا
                     </h2>
@@ -73,10 +35,47 @@ export function Home() {
                     </h3>
 
                     <ul className="jobs-list">
-                        {getJobs()}
+                        {getJobs(jobs.array)}
                     </ul>
                 </section>
             </main>
         </>
     )
+}
+
+async function fetchJobs(setJobs) {
+    let fetchResult;
+    try {
+        fetchResult = await fetch(`${api}/jobs`, {
+            method: "GET"
+        })
+    } catch (error) {
+        console.error(error)
+    } finally{
+        console.log(fetchResult)
+        if (fetchResult && fetchResult.ok) {
+            const jsonRes = await fetchResult.json();
+            setJobs(jsonRes.jobs);
+        }
+    }
+}
+
+function getJobs(jobsList) {
+    return jobsList.map((job) => {
+        return(
+            <li className="job-item">
+                <a href={`/job?id=${job.id}`}>
+                    <div className="icon-container">
+                        <img className="icon" src={job.icon} alt="أيقونة الوظيفة" />
+                    </div>
+                    <h3 className="job-title">
+                        {job.title}
+                    </h3>
+                    <pre className="job-desc">
+                        {job.description}
+                    </pre>
+                </a>
+            </li>
+        )
+    })
 }

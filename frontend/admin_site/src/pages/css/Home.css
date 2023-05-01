@@ -1,0 +1,196 @@
+html:has(body .Home), body:has(.Home){
+    height: 100vh;
+    max-height: 100vh;
+}
+
+.Home{
+    direction: ltr;
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    transition: all 0.4s ease;
+}
+
+.Home main{
+    /* border: 2px solid #ff0000; */
+    width: 100%;
+    transition: all 0.5s ease;
+    padding: 0 20px;
+    max-width: 1400px;
+}
+
+.Home main :is(.controls, .submissions-info){
+    margin-bottom: 30px;
+}
+
+.Home .category-tabs{
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    width: 100%;
+    gap: 1px;
+    margin-bottom: 25px;
+}
+
+.Home .category-tabs button{
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    box-shadow: 0px 4px 7px rgb(0 0 0 / 12%);
+    width: 100%;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.Home .category-tabs button.selected{
+    border-bottom-color: #0c7db1;
+    margin-bottom: 15px;
+}
+
+.Home .controls{
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    gap: 60px;
+    text-align: right;
+}
+
+.Home .controls *{
+    max-width: 300px;
+}
+
+.Home .submissions-info{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    direction: rtl;
+    padding-top: 20px;
+    border-top: 1px solid #5555554f;
+    font-size: 0.85em;
+    max-height: 100px;
+}
+
+.Home .submissions-area{
+    height: calc(100vh - 380px);
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #5555554f;
+    margin-bottom: 15px;
+}
+
+.Home .submission-field{
+    direction: rtl;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+.Home .submission-field .submission{
+    /* margin-bottom: 15px; */
+    /* box-shadow: 0px 4px 7px rgb(0 0 0 / 12%); */
+    border: 1px solid #3d3d3d54;
+    border-style: outset;
+    border-top: none;
+    border-radius: 6px;
+    background-color: #f4fbff;
+    padding: 10px 10px;
+}
+
+.Home .submission-field .submissions{
+    border-spacing: 0;
+    width: 100%;
+    text-align: center;
+    user-select: none;
+}
+
+.Home .submissions .spacing-cell{
+    width: 10px;
+}
+
+.Home .submissions tr:has(td):hover{
+    background-color: #a3c8f894;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
+.Home .submissions tr:has(td):active{
+    background-color: #a3c8f8c7;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
+.Home .submissions tr td:first-of-type{
+    border-left: 1px solid #000;
+}
+
+.Home .submissions th{
+    padding-bottom: 20px;
+}
+.Home .submissions td{
+    padding-bottom: 8px;
+}
+
+.Home .submissions th{
+    font-weight: 600;
+    font-size: 1em;
+}
+.Home .submissions td{
+    font-size: 0.9em;
+}
+
+.Home .page-selector{
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.Home .page-selector button{
+    user-select: none;
+    cursor: pointer;
+    text-align: center;
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: inherit;
+    line-height: inherit;
+    background: none;
+}
+.Home .page-selector :is(button:last-of-type, button:first-of-type){
+    border-radius: 20px;
+    padding: 0 10px;
+}
+.Home .page-selector :is(button:last-of-type, button:first-of-type):hover{
+    background-color: #85858546;
+}
+
+.Home .page-selector button:not(:first-of-type):not(:last-of-type){
+
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.Home .page-selector button:not(:first-of-type):not(:last-of-type):hover{
+    background-color: #85858546;
+}
+
+.Home .page-selector button:disabled{
+    color: #757575;
+    cursor: not-allowed;
+}
+
+.Home .page-selector button.selected-page{
+    /* border: 1px solid #000; */
+    box-shadow: 0px 0px 4px rgb(0 0 0 / 50%);
+}
+
+@media (width >= 700px){
+    body:has(.mover.active) .Home{
+        width: calc(100% - 225px);
+        margin-right: 225px;
+    }
+}

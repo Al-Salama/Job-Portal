@@ -6,7 +6,7 @@ function getFormData(req) {
         });
     })
 }
-const formidable = require("formidable");
+import formidable from "formidable";
 const requiredInfo = {
     fields: [
         'name',
@@ -39,13 +39,13 @@ const requiredInfo = {
     ]
     // 'experience-certificate',
 }
-async function formVerifyer(req, res, next){
+export default async function formVerifyer(req, res, next){
     const form = await getFormData(req);
     if (form.error) {
         res.status(400)
             .json({
                 success: false,
-                error: 400,
+                code: 400,
                 message: "Bad request - You need to fill the form data"
             })
         console.error(form.error)
@@ -56,7 +56,7 @@ async function formVerifyer(req, res, next){
         res.status(400)
             .json({
                 success: false,
-                error: 400,
+                code: 400,
                 message: "Bad request - You need to fill the form data"
             })
         return;
@@ -162,8 +162,4 @@ function verifyApplicationData(fields = {}, files = {}) { // Making sure that th
     }
 
     return true;
-}
-
-module.exports = {
-    formVerifyer
 }

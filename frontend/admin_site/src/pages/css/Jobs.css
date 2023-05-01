@@ -1,0 +1,117 @@
+html:has(body .Jobs), body:has(.Jobs){
+    height: 100vh;
+    max-height: 100vh;
+}
+
+.Jobs{
+    direction: ltr;
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    transition: all 0.4s ease;
+}
+
+.Jobs main{
+    /* border: 2px solid #ff0000; */
+    width: 100%;
+    transition: all 0.5s ease;
+    padding: 0 20px;
+    max-width: 1400px;
+}
+
+.Jobs .controls{
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    gap: 60px;
+    text-align: right;
+}
+
+.Jobs .info{
+    direction: rtl;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Jobs .info .alert{
+    margin: 0;
+}
+
+.Jobs .controls #add-job{
+    width: 180px;
+}
+
+.Jobs .controls *{
+    max-width: 300px;
+}
+
+.Jobs .jobs-area{
+    height: calc(100vh - 210px);
+    display: flex;
+    flex-direction: column;
+    margin-top: 60px;
+}
+
+.Jobs:has(.info .alert) .jobs-area{
+    height: calc(100vh - 210px - 57px - 10px);
+}
+
+.Jobs .info:has(.alert){
+    margin-top: 10px;
+}
+
+.Jobs .jobs-field{
+    direction: rtl;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+.Jobs .jobs-field .jobs{
+    border-spacing: 0;
+    width: 100%;
+    text-align: center;
+    user-select: none;
+}
+
+.Jobs .jobs .spacing-cell{
+    width: 10px;
+}
+
+.Jobs .jobs tr:has(td):hover{
+    background-color: #a3c8f894;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
+.Jobs .jobs tr:has(td):active{
+    background-color: #a3c8f8c7;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
+.Jobs .jobs tr td:first-of-type{
+    border-left: 1px solid #000;
+}
+
+.Jobs .jobs th{
+    padding-bottom: 20px;
+}
+.Jobs .jobs td{
+    padding-bottom: 8px;
+}
+
+.Jobs .jobs th{
+    font-weight: 600;
+    font-size: 1em;
+}
+.Jobs .jobs td{
+    font-size: 0.9em;
+}
+
+@media (width >= 700px){
+    body:has(.mover.active) .Jobs{
+        width: calc(100% - 225px);
+        margin-right: 225px;
+    }
+}

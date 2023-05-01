@@ -1,7 +1,10 @@
 // Using MariaDB database
+import dotenv from "dotenv";
+dotenv.config();
 
-const mariaDB = require('mariadb');
-class SqlConnection {
+import mariaDB from 'mariadb';
+
+export class SqlConnection {
 
 	static pool = mariaDB.createPool({
 		host: process.env.DB_HOST,
@@ -9,7 +12,7 @@ class SqlConnection {
 		password: process.env.DB_PASSWORD,
 		database: process.env.DB_DATABASE,
 		charset: 'utf8mb4',
-		connectionLimit: 15,
+		connectionLimit: 25,
 		trace: true
 	});
 
@@ -18,6 +21,7 @@ class SqlConnection {
 	};
 
 	async connect() {
+		console.log("create a connection")
 		try {
 			const myConnection = await SqlConnection.pool.getConnection();
 			this.connection = myConnection;
@@ -28,7 +32,6 @@ class SqlConnection {
 	};
 
 	async query(queryString, args) {
-
 		try {
 			const result = await this.connection.query(queryString, args);
 			return [true, result];
@@ -38,6 +41,7 @@ class SqlConnection {
     }
 
 	async disconnect(){
+		console.log("distroy connection")
 		try {
 			await this.connection.release() // return the connection to the pool;
 			return [true, false];
@@ -47,6 +51,17 @@ class SqlConnection {
 	}
 }
 
-module.exports = {
-	SqlConnection
+export async function getConnection(req, res) {
+	const SQL = new SqlConnection();
+	const [success, connection] = await SQL.connect();
+	if (!success) {
+		console.error("Error logining in the database", connection);
+		res.status(500).json({
+			success: false,
+			code: 500,
+			message: "Internal Server Error."
+		});
+		return false;
+	}
+	return SQL;
 }
