@@ -27,3 +27,4 @@ yarn-error.log*
 /backend/node_modules
 /backend/application_files
 /backend/*.env
+/backend/backup.sql

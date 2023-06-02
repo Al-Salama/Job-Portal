@@ -347,3 +347,4 @@ function getRandomKey() {
 function isDigit(digit) {
     return /^\d+$/.test(digit)
 }
+

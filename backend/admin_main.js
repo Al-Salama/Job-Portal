@@ -17,7 +17,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const sessionTimeout = 60_000 * 15;
+const sessionTimeout = 60_000 * 30;
 const submissionsPageLimit = 50;
 
 import imgURL from 'image-url-validator'
@@ -204,6 +204,16 @@ app.get("/api/application_files/:applicationKey/:fileName", authenticateClient, 
     res.sendFile(rootPath);
 })
 
+app.get("/api/application_files/:fileName", authenticateClient, async function (req, res) {
+    const rootPath = `${__dirname}/application_files/${req.params.fileName}`;
+    if (!fs.existsSync(rootPath)) {
+        res.sendStatus(404);
+        return;
+    }
+
+    res.sendFile(rootPath);
+})
+
 const applications = {
     lastUpdate: 0,
     jobApplications: []
@@ -300,7 +310,8 @@ async function getJobSubmissions(res, SQL, applicationId) {
                 id: submission.id,
                 status: submission.status,
                 name: submission.name,
-                id_number: submission.id_number
+                id_number: submission.id_number,
+                phone: submission.phone
             })
         }
         sendSubmisions.new.count = sendSubmisions.new.rows.length;
@@ -334,11 +345,117 @@ function isDigit(digit) {
     return /^\d+$/.test(digit)
 }
 
+function filterByName(value, index, array) {
+    let found = false;
+    if (this.startsWith("*") && this.endsWith("*")) {
+        const actualSearchText = this.slice(1, -1);
+        found = value.name.includes(actualSearchText);
+    } else if (this.startsWith("*")) {
+        const actualSearchText = this.slice(1, this.length);
+        found = value.name.endsWith(actualSearchText)
+    } else {
+        found = value.name.startsWith(this);
+    }
+
+    return found;
+}
+
+function searchBySubmissionId(value, index, array) {
+    return value.id.toString() === this;
+}
+
+function searchByIdNumber(value, index, array) {
+    return value.id_number.startsWith(this);
+}
+
+function searchByPhoneNumber(value, index, array) {
+    return value.phone.startsWith(this);
+}
+
+function chooseFilterFunction(searchText) {
+    let filterFunc;
+    if (!isDigit(searchText)) { // if search text is not only numbers, search by name
+        filterFunc = filterByName;
+    } else { // otherwise
+        if (searchText.length === 10) { // if it's 10 digits
+            if (searchText.startsWith("1") || searchText.startsWith("2")) { // if it starts with 1 or 2, then search by id_number
+                filterFunc = searchByIdNumber;
+            } else { // otherwise, search by phone number
+                filterFunc = searchByPhoneNumber;
+            }
+        } else { // otherwise, search by submission id
+            filterFunc = searchBySubmissionId;
+        }
+    }
+
+    return filterFunc;
+}
+
+app.get("/api/submissions/:appId/search/:searchText", rateLimiter.adminGlobalLimiter, authenticateClient, async function (req, res){
+    const appId = isDigit(req.params.appId) && parseInt(req.params.appId);
+    const searchText = ((req.params.searchText.length > 0) && decodeURI(req.params.searchText)) || false;
+    if (!appId || !searchText) {
+        res.status(400).json({
+            success: false,
+            code: 400,
+            message: "Bad request"
+        })
+        return;
+    }
+
+    const SQL = await getConnection(req, res);
+    if (!SQL) return;
+
+    const submissions = await getJobSubmissions(res, SQL, appId);
+    SQL.disconnect();
+    if (submissions === false) return;
+
+    const filterFunc = chooseFilterFunction(searchText);
+
+    let totalPages;
+    let setCategorySelected = false;
+    let endSubmission;
+    let foundCategoryResult;
+    let searchedCategories = {};
+    let filteredSearch;
+    for (const [category, value] of Object.entries(submissions)) {
+        filteredSearch = value.rows.filter(filterFunc, searchText);
+
+        totalPages = Math.ceil(filteredSearch.length / submissionsPageLimit);
+        if (!foundCategoryResult) {
+            setCategorySelected = filteredSearch.length > 0;
+            if (setCategorySelected) {
+                foundCategoryResult = true;
+            }
+        } else if (setCategorySelected) {
+            setCategorySelected = false;
+        }
+
+        endSubmission = Math.min(submissionsPageLimit, filteredSearch.length);
+
+        searchedCategories[category] = {
+            rows: filteredSearch.slice(0, endSubmission),
+            count: filteredSearch.length,
+            currentPage: 1,
+            totalPages: totalPages,
+            selected: setCategorySelected
+        }
+    }
+    if (!foundCategoryResult) searchedCategories.new.selected = true;
+
+    res.status(200).json({
+        success: true,
+        code: 200,
+        submissions: searchedCategories
+    })
+})
+
+
 app.get("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient, async function (req, res) {
     const appId = (req.query.appId ? true : false) && isDigit(req.query.appId) && parseInt(req.query.appId);
     const categoryId = (req.query.category ? true : false) && isDigit(req.query.category) && parseInt(req.query.category);
     const page = (req.query.page ? true : false) && isDigit(req.query.page) && parseInt(req.query.page);
-
+    const searchText = ((req.query.s ? true : false) && decodeURI(req.query.s)) || false;
     if (
         appId ? appId < 1 : false || // if appId is provided and its value less than 1
         categoryId ? (categoryId < 0 || categoryId > 3) : false || // or if category is provided and its value less than 0 or greater than 3
@@ -359,6 +476,11 @@ app.get("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient, 
     SQL.disconnect();
     if (submissions === false) return;
 
+    let filterFunc;
+    if (searchText) {
+        filterFunc = chooseFilterFunction(searchText);
+    }
+
     const pageSubmission = {};
     let index = 0;
     let totalPages;
@@ -367,7 +489,13 @@ app.get("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient, 
     let aCategorySelected;
     let startSubmission;
     let endSubmission;
+    let filteredSearch;
     for (const [category, value] of Object.entries(submissions)) {
+        if (searchText) {
+            filteredSearch = value.rows.filter(filterFunc, searchText);
+            value.count = filteredSearch.length;
+        } else filteredSearch = value.rows;
+
         totalPages = Math.ceil(value.count / submissionsPageLimit);
         currentPage = page ? ((page <= totalPages && page) || 1) : 1;
         isSelected = (categoryId === index);
@@ -376,7 +504,7 @@ app.get("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient, 
         endSubmission = Math.min(startSubmission + submissionsPageLimit, value.count);
 
         pageSubmission[category] = {
-            rows: value.rows.slice(startSubmission, endSubmission),
+            rows: filteredSearch.slice(startSubmission, endSubmission),
             count: value.count,
             currentPage: currentPage,
             totalPages: totalPages,
@@ -415,6 +543,7 @@ app.get("/api/submissions/:appId/:categoryId/pages/:page", rateLimiter.adminGlob
     const applicationId = isDigit(req.params.appId) && parseInt(req.params.appId);
     const categoryId = isDigit(req.params.categoryId) && parseInt(req.params.categoryId);
     const page = isDigit(req.params.page) && parseInt(req.params.page);
+    const searchText = ((req.query.s ? true : false) && decodeURI(req.query.s)) || false;
 
     if (
         typeof categoryId !== "number" ||
@@ -454,7 +583,17 @@ app.get("/api/submissions/:appId/:categoryId/pages/:page", rateLimiter.adminGlob
         return;
     }
 
-    const categorySubmissions = Object.entries(submissions)[categoryId][1]
+    /*
+        Convert the submission object into array [[categoryName, categorySubmissions]]
+        to select the submission of the given category id in a clean way.
+    */
+    let categorySubmissions = Object.entries(submissions)[categoryId][1]
+    if (searchText) {
+        const filterFunc = chooseFilterFunction(searchText);
+        categorySubmissions.rows = categorySubmissions.rows.filter(filterFunc, searchText);
+        categorySubmissions.count = categorySubmissions.rows.length;
+    }
+
     const totalPages = Math.ceil(categorySubmissions.count / submissionsPageLimit);
     if (page > totalPages) {
         res.status(404).json({
@@ -467,13 +606,6 @@ app.get("/api/submissions/:appId/:categoryId/pages/:page", rateLimiter.adminGlob
 
     const startSubmission = (page - 1) * submissionsPageLimit;
     const endSubmission = Math.min(startSubmission + submissionsPageLimit, categorySubmissions.count);
-
-    /*
-        Convert the submission object into array [[categoryName, categorySubmissions]]
-        to select the submission of the given category id in a clean way.
-    */
-
-
     const pageSubmissions = {
         rows: categorySubmissions.rows.slice(startSubmission, endSubmission),
         count: categorySubmissions.count,
@@ -719,79 +851,97 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
             };
         }
 
-        /*
-            i used this method so it can handles phone numbers with all possible formats:
-            • 05########
-            • 5########
-            • +9665########
-        */
-        if (!foundSubmission.phone.startsWith("+966")) {
-            foundSubmission.phone = foundSubmission.phone.replace(/^0{1}/, "") // 05######## --> 5########
-            foundSubmission.phone = "+966".concat(foundSubmission.phone); // 5######## --> +9665########
-        }
-
         const interviewRealDate = new Date(interviewDate);
 
-        const formatTime = interviewRealDate.toLocaleTimeString("ar-US", {
-            timeZone: "Asia/Riyadh",
-            hour12: true,
-            timeStyle: "short"
-        }).replace("م", "مساءً").replace("ص", "صباحًا")
+        if (!process.env.DEVELOPMENT_ENVIRONMENT) {
+            /*
+                i used this method so it can handles phone numbers with all possible formats:
+                • 05########
+                • 5########
+                • +9665########
+            */
+            if (!foundSubmission.phone.startsWith("+966")) {
+                foundSubmission.phone = foundSubmission.phone.replace(/^0{1}/, "") // 05######## --> 5########
+                foundSubmission.phone = "+966".concat(foundSubmission.phone); // 5######## --> +9665########
+            }
 
-        const formatDate = interviewRealDate.toLocaleDateString("ar-US", {
-            timeZone: "Asia/Riyadh",
-            month: "long",
-            weekday: "long",
-            day: "2-digit",
-            year: "numeric"
-        })
 
-        const body = JSON.stringify({
-            "phone": "+966551179225",
-            "channelId": parseInt(process.env.WHATSAPP_CHANNEL_ID),
-            "templateName": process.env.WHATSAPP_INTERVIEW_TEMPLATE,
-            "languageCode": process.env.WHATSAPP_INTERVIEW_LANGUAGE_CODE,
-            "parameters": [
-                foundSubmission.name,
-                `${foundSubmission.id}`,
-                foundSubmission.jobName,
-                `يوم ${formatDate}`,
-                formatTime,
-                locationQuery[0].name,
-                locationQuery[0].url,
-                interviewNotes || "لا يوجد"
-            ]
-        }, null, 2)
-        let result;
-        try {
-            result = await node_fetch("https://imapi.bevatel.com/whatsapp/api/message", {
-                method: "POST",
-                body: body,
-                headers: {
-                    'Content-Type': 'application/json',
-                    "Authorization": process.env.WHATSAPP_ACCESS_TOKEN
-                }
-            });
-        } catch (error) {
-            // return;
-            console.error(error);
-            res.status(504).json({
-                success: false,
-                code: 504,
-                message: "Couldn't send message to whatsapp."
+            const formatTime = interviewRealDate.toLocaleTimeString("ar-US", {
+                timeZone: "Asia/Riyadh",
+                hour12: true,
+                timeStyle: "short"
+            }).replace("م", "مساءً").replace("ص", "صباحًا")
+
+            const formatDate = interviewRealDate.toLocaleDateString("ar-US", {
+                timeZone: "Asia/Riyadh",
+                month: "long",
+                weekday: "long",
+                day: "2-digit",
+                year: "numeric"
             })
-            return;
-        }
 
-        if (!result.ok) {
-            const response = await result.json();
-            console.error(response);
-            res.status(502).json({
-                success: false,
-                code: 502,
-                message: "Couldn't send message to whatsapp, maybe wrong number."
-            })
-            return;
+            const body = {
+                "phone": foundSubmission.phone,
+                "channelId": parseInt(process.env.WHATSAPP_CHANNEL_ID),
+                "templateName": process.env.WHATSAPP_INTERVIEW_TEMPLATE,
+                "languageCode": process.env.WHATSAPP_INTERVIEW_LANGUAGE_CODE,
+                "parameters": [
+                    foundSubmission.name,
+                    `${foundSubmission.id}`,
+                    foundSubmission.jobName,
+                    `يوم ${formatDate}`,
+                    formatTime,
+                    locationQuery[0].name,
+                    locationQuery[0].url,
+                    interviewNotes || "لا يوجد"
+                ]
+            }
+            let result;
+            try {
+                result = await node_fetch("https://imapi.bevatel.com/whatsapp/api/message", {
+                    method: "POST",
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "Authorization": process.env.WHATSAPP_ACCESS_TOKEN
+                    }
+                });
+                /* setTimeout(() => {
+                    body.phone = "+966506490800";
+                    node_fetch("https://imapi.bevatel.com/whatsapp/api/message", {
+                        method: "POST",
+                        body: JSON.stringify(body),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "Authorization": process.env.WHATSAPP_ACCESS_TOKEN
+                        }
+                    })
+                }, 5000); */
+            } catch (error) {
+                // return;
+                console.error(error);
+                const message = (error.message && `${error.message}`) || "Couldn't send message to whatsapp."
+                res.status(504).json({
+                    success: false,
+                    code: 504,
+                    message: message
+                })
+                return;
+            }
+
+            if (!result.ok) {
+                try {
+                    const response = await result.json();
+                    console.error(response);
+                } catch (error) {}
+
+                res.status(502).json({
+                    success: false,
+                    code: 502,
+                    message: "Couldn't send message to whatsapp, maybe wrong number."
+                })
+                return;
+            }
         }
 
         const logAcceptanceQueryString =
@@ -827,6 +977,13 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
         return;
     }
 
+    res.status(200).json({
+        success: true,
+        code: 200,
+        submissionId: submissionId,
+        newStatus: submissionNewStatus
+    })
+
     for (const app of applications.jobApplications) {
         if (!Array.isArray(app.submissions)) continue;
 
@@ -836,13 +993,6 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
             break;
         }
     }
-
-    res.status(200).json({
-        success: true,
-        code: 200,
-        submissionId: submissionId,
-        newStatus: submissionNewStatus
-    })
 })
 
 app.get("/api/settings", rateLimiter.adminGlobalLimiter, authenticateClient, async function(req, res) {
