@@ -28,3 +28,6 @@ yarn-error.log*
 /backend/application_files
 /backend/*.env
 /backend/backup.sql
+
+#client
+build
