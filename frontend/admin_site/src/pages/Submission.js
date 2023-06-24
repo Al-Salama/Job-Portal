@@ -614,7 +614,7 @@ const responseMessages = {
         className: "alert-orange"
     },
     "403": {
-        message: "صلاحية الدخول غير معترف بها، يرجى إعادة تسجيل الدخول",
+        message: "تم رفض طلبك من قبل الخادم\n{server_message}",
         className: "alert-orange"
     },
     "404": {
@@ -643,7 +643,7 @@ function getServerResponseText() {
         const responseSettings = responseMessages[g_serverResponse.get.code];
         if (responseSettings) {
             className = responseSettings.className;
-            message = responseSettings.message;
+            message = responseSettings.message.replace("{server_message}", g_serverResponse.get.message);
         } else {
             if (g_serverResponse.get.code >= 500) {
                 className = "alert-red";

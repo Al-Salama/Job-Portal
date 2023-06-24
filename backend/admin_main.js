@@ -735,6 +735,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
 
     const [getStatusSuccess, getStatusQuery] = await SQL.query("SELECT `status` FROM `"+ db.job_submissions +"` WHERE `id` = ? LIMIT 1;", [submissionId]);
     if (!getStatusSuccess) {
+        console.error("API: PATCH@'/api/submissions'\n", getStatusQuery)
         res.status(500).json({
             success: false,
             code: 500,
@@ -793,6 +794,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
         const [locationSuccess, locationQuery] = await SQL.query("SELECT * FROM `"+ db.interview_locations +"` WHERE `id` = ? LIMIT 1;", [interviewLocationId]);
         if (!locationSuccess){
             SQL.disconnect();
+            console.error("API: PATCH@'/api/submissions'\n", locationQuery)
             res.status(500).json({
                 success: false,
                 code: 500,
@@ -830,7 +832,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
 
             const [querySuccess, queryResult] = await SQL.query(qStr, [submissionId])
             if (!querySuccess) {
-                console.error("Error in database query", queryResult);
+                console.error("API: PATCH@'/api/submissions'\n", queryResult)
                 res.status(500).json({
                     success: false,
                     code: 500,
@@ -918,8 +920,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
                     })
                 }, 5000); */
             } catch (error) {
-                // return;
-                console.error(error);
+                console.error("API: PATCH@'/api/submissions'\n", error)
                 const message = (error.message && `${error.message}`) || "Couldn't send message to whatsapp."
                 res.status(504).json({
                     success: false,
@@ -940,6 +941,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
                     code: 502,
                     message: "Couldn't send message to whatsapp, maybe wrong number."
                 })
+                console.error("API: PATCH@'/api/submissions'\n", "Error number WHATSAPP")
                 return;
             }
         }
@@ -949,7 +951,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
         const [logAcceptanceSuccess, logAcceptanceQuery] = await SQL.query(logAcceptanceQueryString, [submissionId, interviewRealDate, locationQuery[0].name, locationQuery[0].url, interviewNotes, req.session.id]);
         if (!logAcceptanceSuccess || !logAcceptanceQuery.insertId) {
             SQL.disconnect();
-            console.error(logAcceptanceQuery)
+            console.error("API: PATCH@'/api/submissions'\n", logAcceptanceQuery)
             res.status(500).json({
                 success: false,
                 code: 500,
@@ -961,7 +963,7 @@ app.patch("/api/submissions", rateLimiter.adminGlobalLimiter, authenticateClient
     const [updateStatusSuccess, updateStatusQuery] = await SQL.query("UPDATE `"+ db.job_submissions +"` SET `status` = ? WHERE `id` = ?", [submissionNewStatus, submissionId]);
     SQL.disconnect();
     if (!updateStatusSuccess) {
-        console.error(updateStatusQuery)
+        console.error("API: PATCH@'/api/submissions'\n", updateStatusQuery)
         res.status(500).json({
             success: false,
             code: 500,
@@ -1120,6 +1122,7 @@ app.delete("/api/settings/locations/:id", rateLimiter.adminGlobalLimiter, authen
     const [deleteSuccess, deleteQuery] = await SQL.query("DELETE FROM `"+ db.interview_locations +"` WHERE `id` = ? LIMIT 1;", [locationId]);
     if (!deleteSuccess) {
         SQL.disconnect();
+        console.error("API: '/api/settings/locations/:id'\n", deleteQuery)
         res.status(500).json({
             success: false,
             code: 500,
@@ -1139,6 +1142,7 @@ app.delete("/api/settings/locations/:id", rateLimiter.adminGlobalLimiter, authen
     const [locationsSuccess, locationsQuery] = await SQL.query("SELECT * FROM `"+ db.interview_locations +"` ORDER BY `id` ASC;");
     SQL.disconnect();
     if (!locationsSuccess) {
+        console.error("API: '/api/settings/locations/:id'\n", locationsQuery)
         res.status(500).json({
             success: false,
             code: 500,
@@ -1159,7 +1163,6 @@ async function getAllJobs(SQL, res) {
     const columns = "j.`id`, j.`hidden`, j.`title`, ja.`closed`, a.`username` as added_by, a2.`username` as edited_by";
     const queryStr = "SELECT "+ columns +" FROM `"+ db.jobs +"` j LEFT JOIN `"+ db.job_applications +"` ja ON (ja.`job_id` = j.`id` AND ja.`closed` = 0) LEFT JOIN `"+ db.admins +"` a ON (a.`id` = j.`added_by`) LEFT JOIN `"+ db.admins +"` a2 ON (a2.`id` = j.`edited_by`) ORDER BY j.`id` DESC;"
     const [jobsSuccess, jobsQuery] = await SQL.query(queryStr);
-
     if (!jobsSuccess) {
         console.error(jobsQuery)
         res.status(500).json({
