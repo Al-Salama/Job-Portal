@@ -21,7 +21,6 @@ export class SqlConnection {
 	};
 
 	async connect() {
-		console.log("create a connection")
 		try {
 			const myConnection = await SqlConnection.pool.getConnection();
 			this.connection = myConnection;
@@ -41,7 +40,6 @@ export class SqlConnection {
     }
 
 	async disconnect(){
-		console.log("distroy connection")
 		try {
 			await this.connection.release() // return the connection to the pool;
 			return [true, false];
